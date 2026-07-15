@@ -39,6 +39,10 @@ export const useLessonStore = create((set, get) => ({
   addSolarBoardLine: (line) =>
     set((s) => ({ solarBoard: { ...s.solarBoard, lines: [...s.solarBoard.lines, line] } })),
 
+  // ---- doubt-safe participation ----
+  doubtCheck: null, // {attempts} while "is your doubt clear?" popup is showing
+  setDoubtCheck: (doubtCheck) => set({ doubtCheck }),
+
   // ---- interaction ----
   userHandRaised: false,
   pendingDoubt: null, // question text waiting to be answered

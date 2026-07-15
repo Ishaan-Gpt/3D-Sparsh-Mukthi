@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { useLessonStore } from "../../store/useLessonStore";
 import { startListening, sttSupported } from "../../lib/stt";
+import { stopSpeech } from "../../lib/tts";
 import "./Hud.css";
 
 const PHASE_LABELS = {
   intro: "👋 Welcome",
   teaching: "📚 Lesson",
   peerQuestion: "🙋 Classmate asks",
+  doubtWait: "✋ Your turn",
   doubt: "✋ Your question",
   whiteboard: "✏️ On the board",
   recap: "⭐ Recap",
   quiz: "🎉 Quiz",
   break: "🧘 Break",
+  paused: "⏸ Paused",
+  attention: "👀 Attention",
   end: "🏁 Class over",
 };
 
@@ -23,27 +27,32 @@ function useCountdown(target) {
     return () => clearInterval(id);
   }, [target]);
   if (!target) return "";
-  const s = Math.floor(left / 1000);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const sec = Math.floor(left / 1000);
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 }
 
-export function LessonHUD({ resumeFromBreak }) {
+export function LessonHUD({ resumeFromBreak, pauseClass, resumeClass, answerDoubtCheck }) {
   const phase = useLessonStore((s) => s.phase);
   const config = useLessonStore((s) => s.config);
   const caption = useLessonStore((s) => s.caption);
   const captionSpeaker = useLessonStore((s) => s.captionSpeaker);
-  const userHandRaised = useLessonStore((s) => s.userHandRaised);
   const raiseUserHand = useLessonStore((s) => s.raiseUserHand);
   const clearUserHand = useLessonStore((s) => s.clearUserHand);
   const setPendingDoubt = useLessonStore((s) => s.setPendingDoubt);
+  const doubtCheck = useLessonStore((s) => s.doubtCheck);
   const sessionEndsAt = useLessonStore((s) => s.sessionEndsAt);
   const breakEndsAt = useLessonStore((s) => s.breakEndsAt);
+  const enterSolar = useLessonStore((s) => s.enterSolar);
   const reset = useLessonStore((s) => s.reset);
 
-  const enterSolar = useLessonStore((s) => s.enterSolar);
-  const immersiveAvailable = /solar|planet|space/i.test(config?.topic ?? "");
   const sessionLeft = useCountdown(sessionEndsAt);
   const breakLeft = useCountdown(breakEndsAt);
+
+  const immersiveAvailable = /solar|planet|space/i.test(config?.topic ?? "");
+  const quit = () => {
+    stopSpeech();
+    reset();
+  };
 
   // ---- doubt input state ----
   const [doubtText, setDoubtText] = useState("");
@@ -67,8 +76,6 @@ export function LessonHUD({ resumeFromBreak }) {
     setPendingDoubt(q);
   };
 
-  const showDoubtModal = userHandRaised && phase !== "doubt";
-
   return (
     <div className="hud">
       {/* top bar */}
@@ -81,7 +88,7 @@ export function LessonHUD({ resumeFromBreak }) {
       </div>
 
       {/* captions */}
-      {caption && phase !== "break" && (
+      {caption && !["break", "paused"].includes(phase) && (
         <div className="hud-caption">
           <span className="hud-speaker">{captionSpeaker}</span>
           {caption}
@@ -93,7 +100,7 @@ export function LessonHUD({ resumeFromBreak }) {
         <button
           className="hud-btn raise"
           onClick={raiseUserHand}
-          disabled={["break", "end", "doubt"].includes(phase)}
+          disabled={["break", "end", "doubt", "doubtWait", "paused"].includes(phase)}
           title="Raise your hand to ask a question"
         >
           ✋ Ask
@@ -102,22 +109,32 @@ export function LessonHUD({ resumeFromBreak }) {
           <button
             className="hud-btn immersive"
             onClick={enterSolar}
-            disabled={["break", "end"].includes(phase)}
+            disabled={["break", "end", "paused"].includes(phase)}
             title="Turn the classroom into a 3D solar system!"
           >
             🪐 Immersive Study
           </button>
         )}
-        <button className="hud-btn exit" onClick={reset} title="Leave the classroom">
-          🚪 Exit
+        <button
+          className="hud-btn"
+          onClick={pauseClass}
+          disabled={["break", "end", "paused", "doubt", "doubtWait"].includes(phase)}
+          title="Pause the class — come back later"
+        >
+          ⏸ Pause class
+        </button>
+        <button className="hud-btn exit" onClick={quit} title="Leave the classroom">
+          🚪 Quit
         </button>
       </div>
 
-      {/* doubt modal */}
-      {showDoubtModal && (
+      {/* doubt modal — teacher has called your name and is waiting */}
+      {phase === "doubtWait" && (
         <div className="hud-modal-backdrop">
           <div className="hud-modal">
-            <h2>✋ Yes? What&apos;s your question?</h2>
+            <h2>
+              ✋ Yes {config?.userName ?? ""}? The class is waiting for your question!
+            </h2>
             <input
               autoFocus
               type="text"
@@ -155,6 +172,23 @@ export function LessonHUD({ resumeFromBreak }) {
         </div>
       )}
 
+      {/* "is your doubt clear?" check */}
+      {doubtCheck && (
+        <div className="hud-modal-backdrop">
+          <div className="hud-modal doubt-check">
+            <h2>🧑‍🏫 Is your doubt clear now?</h2>
+            <div className="hud-modal-row center">
+              <button className="hud-btn primary big" onClick={() => answerDoubtCheck(true)}>
+                😊 Yes, I got it!
+              </button>
+              <button className="hud-btn big" onClick={() => answerDoubtCheck(false)}>
+                🤔 Not yet…
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* break overlay */}
       {phase === "break" && (
         <div className="hud-break">
@@ -169,15 +203,33 @@ export function LessonHUD({ resumeFromBreak }) {
         </div>
       )}
 
+      {/* user-paused overlay */}
+      {phase === "paused" && (
+        <div className="hud-break">
+          <div className="hud-break-card">
+            <h1>⏸ Class Paused</h1>
+            <p>Your teacher is waiting patiently. Come back whenever you are ready!</p>
+            <div className="hud-modal-row center">
+              <button className="hud-btn primary big" onClick={resumeClass}>
+                ▶ Resume class
+              </button>
+              <button className="hud-btn big" onClick={quit}>
+                🚪 Quit for today
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* end card */}
       {phase === "end" && (
         <div className="hud-break">
           <div className="hud-break-card">
-            <h1>🌟 Great job today!</h1>
+            <h1>🌟 Great job today, {config?.userName}!</h1>
             <p>
               You finished the lesson on <strong>{config?.topic}</strong>.
             </p>
-            <button className="hud-btn primary" onClick={reset}>
+            <button className="hud-btn primary" onClick={quit}>
               🏫 Back to my dashboard
             </button>
           </div>

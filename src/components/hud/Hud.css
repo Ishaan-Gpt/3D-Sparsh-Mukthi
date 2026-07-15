@@ -206,3 +206,16 @@
   color: #fff;
   font-size: 1.02rem;
 }
+
+.hud-btn.big {
+  font-size: 1.15rem;
+  padding: 14px 22px;
+}
+
+.hud-modal-row.center {
+  justify-content: center;
+}
+
+.hud-modal.doubt-check {
+  text-align: center;
+}

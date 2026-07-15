@@ -5,9 +5,9 @@ import { useLessonStore } from "../../store/useLessonStore";
 import { gestureState } from "../../lib/gestureState";
 import { dirToYawPitch } from "../../lib/threeUtils";
 
-// You sit at a student desk. The camera never moves — it only turns (head)
-// and zooms (pinch / wheel). True first-person.
-const SEAT = new THREE.Vector3(0, 1.1, 4.6);
+// You sit at the 2nd-row centre bench. The camera never moves — it only
+// turns (head) and zooms (pinch / wheel). True first-person.
+const SEAT = new THREE.Vector3(0, -0.9, 5.2);
 const TEACHER_HEAD = new THREE.Vector3(-12, 2.6, -14);
 const BOARD = new THREE.Vector3(0, 0.6, -16.6);
 
@@ -66,8 +66,16 @@ export function FPVCamera() {
     const st = useLessonStore.getState();
     const k = 1 - Math.exp(-delta * 4); // smoothing
 
+    // zoom amount first — zooming always aims at the whiteboard
+    let zoomK = mouse.current.wheelZoom ?? 0;
+    if (gestureState.enabled && gestureState.pinching) {
+      zoomK = Math.max(zoomK, THREE.MathUtils.clamp((0.42 - gestureState.pinch) / 0.3, 0, 1));
+    }
+
     // where the lesson wants you to look by default
-    const target = st.boardFocus || st.phase === "whiteboard" ? BOARD : TEACHER_HEAD;
+    const lessonTarget = st.boardFocus || st.phase === "whiteboard" ? BOARD : TEACHER_HEAD;
+    // pinch/wheel zoom pulls the view onto the whiteboard
+    const target = lessonTarget.clone().lerp(BOARD, THREE.MathUtils.clamp(zoomK * 2, 0, 1));
     const baseDir = target.clone().sub(SEAT).normalize();
     const base = dirToYawPitch(baseDir);
 
@@ -94,10 +102,6 @@ export function FPVCamera() {
     camera.rotation.set(smooth.current.pitch, smooth.current.yaw, 0, "YXZ");
 
     // pinch zoom (hold pinch; tighter pinch = closer) + wheel fallback
-    let zoomK = mouse.current.wheelZoom ?? 0;
-    if (gestureState.enabled && gestureState.pinching) {
-      zoomK = Math.max(zoomK, THREE.MathUtils.clamp((0.42 - gestureState.pinch) / 0.3, 0, 1));
-    }
     const fovT = BASE_FOV - (BASE_FOV - MAX_ZOOM_FOV) * zoomK;
     smooth.current.fov += (fovT - smooth.current.fov) * k;
     if (Math.abs(camera.fov - smooth.current.fov) > 0.01) {

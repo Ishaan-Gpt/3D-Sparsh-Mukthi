@@ -1,13 +1,26 @@
-.gesture-panel {
+/* full-screen pass-through layer (defeats the global #root > * sizing) */
+.overlays {
   position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.gesture-panel {
+  position: absolute;
   right: 14px;
   bottom: 14px;
-  z-index: 40;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
   font-family: "Segoe UI", sans-serif;
+  pointer-events: none;
+}
+
+.gesture-panel .gesture-view,
+.gesture-panel .gesture-toggle {
+  pointer-events: auto;
 }
 
 .gesture-view {
@@ -63,7 +76,7 @@
 }
 
 .palm-cursor {
-  position: fixed;
+  position: absolute;
   width: 22px;
   height: 22px;
   margin: -11px 0 0 -11px;

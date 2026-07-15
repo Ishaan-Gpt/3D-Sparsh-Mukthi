@@ -41,11 +41,13 @@ export function fetchTour(config) {
 }
 
 /** Returns { provider, data: { spoken:[], boardSteps:[] } } */
-export function askDoubt(question, config) {
+export function askDoubt(question, config, extra = {}) {
   return post("/api/doubt", {
     question,
     topic: config.topic,
     classLevel: config.classLevel,
     teacherName: config.teacher.name,
+    studentName: extra.studentName ?? config.userName ?? "",
+    reexplain: Boolean(extra.reexplain),
   });
 }

@@ -2,28 +2,56 @@ import { useEffect, useRef } from "react";
 import { useLessonStore } from "../store/useLessonStore";
 import { speakLines, stopSpeech } from "../lib/tts";
 import { askDoubt } from "../lib/api";
+import { gestureState } from "../lib/gestureState";
 
-const CHILD_VOICE = { voiceGender: "female", rate: 1.05, pitch: 1.45 };
+const CHILD_VOICE = {
+  voiceGender: "female",
+  voiceName: "Puck",
+  styleNote: "an excited, curious 8-year-old Indian school kid",
+  rate: 1.05,
+  pitch: 1.45,
+};
+const BREAK_SECONDS = 120;
+const ATTENTION_AFTER_MS = 12000; // no face this long → teacher checks on you
+const ATTENTION_COOLDOWN_MS = 45000;
+
 // Some models pre-number board steps ("1. Foo") — strip so we number once.
 const stripNum = (s) => String(s).replace(/^\s*\d+[.)]\s*/, "");
-const BREAK_SECONDS = 120;
+
+const CLASSMATE_REACTIONS = [
+  "Ooh! I did not know that!",
+  "Wow, that is so cool!",
+  "That was a good question!",
+  "Now I understand it too!",
+];
 
 /**
  * The conductor. AI proposes content (the lesson plan); this engine decides
- * when each piece plays. Every phase is paced by real TTS callbacks, and
- * timers/events (breaks, hand-raise doubts) interrupt and resume cleanly.
+ * when each piece plays. Every phase is paced by real speech, and
+ * timers/events (breaks, hand-raise doubts, attention drops, immersive mode,
+ * user pause) interrupt and resume from the exact sentence.
  */
 export function useLessonEngine() {
   const store = useLessonStore;
   const cancelRef = useRef(null); // cancels the in-flight speech sequence
   const lineProgressRef = useRef(0); // sentence index inside current phase, for resume
   const nextBreakAtRef = useRef(Infinity);
+  const interruptSaveRef = useRef(null); // saved spot for doubt/pause/attention
+  const attentionCooldownRef = useRef(0);
+  const doubtAttemptsRef = useRef(0);
+  const lastDoubtRef = useRef("");
 
   const s = () => store.getState();
 
   const teacherVoice = () => {
     const t = s().config?.teacher ?? {};
-    return { voiceGender: t.voiceGender, rate: t.rate, pitch: t.pitch };
+    return {
+      voiceGender: t.voiceGender,
+      voiceName: t.voiceName ?? (t.voiceGender === "male" ? "Charon" : "Kore"),
+      styleNote: `${t.name ?? "a teacher"}, a ${t.style ?? "warm"} Indian primary school teacher`,
+      rate: t.rate,
+      pitch: t.pitch,
+    };
   };
 
   const speak = (lines, opts) => {
@@ -43,6 +71,29 @@ export function useLessonEngine() {
     });
   };
 
+  // Save the current spot, run an interruption phase, restore later.
+  const saveSpot = () => {
+    const st = s();
+    interruptSaveRef.current = {
+      phase: ["break", "doubt", "doubtWait", "paused", "attention", "immersive"].includes(st.phase)
+        ? "teaching"
+        : st.phase,
+      segmentIndex: st.segmentIndex,
+      line: lineProgressRef.current,
+    };
+  };
+
+  const restoreSpot = () => {
+    const st = s();
+    const saved = interruptSaveRef.current ?? { phase: "recap", segmentIndex: st.segmentIndex, line: 0 };
+    interruptSaveRef.current = null;
+    lineProgressRef.current = saved.line;
+    const seg = st.lesson?.segments?.[saved.segmentIndex];
+    if (saved.phase === "teaching" && seg) st.setBoard({ title: seg.heading, lines: [] });
+    st.setSegmentIndex(saved.segmentIndex);
+    st.setPhase(saved.phase);
+  };
+
   // Move to a phase, but detour through a break first if one is due.
   const goTo = (phase, segmentIndex = s().segmentIndex) => {
     lineProgressRef.current = 0;
@@ -57,13 +108,23 @@ export function useLessonEngine() {
     s().setPhase(phase);
   };
 
+  // boardPoints may be [{text, afterSentence}] (new) or plain strings (fallback)
+  const normalizePoints = (points, sentenceCount) =>
+    (points ?? []).map((p, i) =>
+      typeof p === "string"
+        ? { text: p, afterSentence: Math.floor((i * sentenceCount) / Math.max(1, points.length)) }
+        : p
+    );
+
   // ------------------------------------------------------------------
-  // Phase scripts — run whenever phase/segment changes
+  // Phase scripts
   // ------------------------------------------------------------------
   const phase = useLessonStore((st) => st.phase);
   const segmentIndex = useLessonStore((st) => st.segmentIndex);
   const lesson = useLessonStore((st) => st.lesson);
   const pendingDoubt = useLessonStore((st) => st.pendingDoubt);
+  const userHandRaised = useLessonStore((st) => st.userHandRaised);
+  const appMode = useLessonStore((st) => st.appMode);
 
   useEffect(() => {
     if (!lesson) return;
@@ -94,16 +155,17 @@ export function useLessonEngine() {
       if (!seg) return goTo("recap");
       if (startLine === 0) st.setBoard({ title: seg.heading, lines: [] });
       st.setBoardFocus(false);
-      const per = Math.max(1, Math.ceil(seg.sentences.length / Math.max(1, seg.boardPoints.length)));
+      const points = normalizePoints(seg.boardPoints, seg.sentences.length);
       speak(seg.sentences.slice(startLine), {
         speaker: teacher,
         onLineStart: (line, i) => {
           track(line, i);
           const abs = startLine + i;
-          const pointIdx = Math.floor(abs / per);
-          const revealed = s().board.lines.length;
-          if (pointIdx >= revealed && seg.boardPoints[revealed]) {
-            s().addBoardLine("• " + seg.boardPoints[revealed]);
+          // reveal every board point whose sentence has arrived — true sync
+          let revealed = s().board.lines.length;
+          while (revealed < points.length && points[revealed].afterSentence <= abs) {
+            s().addBoardLine("• " + points[revealed].text);
+            revealed++;
           }
         },
         onDone: () => goTo("peerQuestion"),
@@ -153,8 +215,7 @@ export function useLessonEngine() {
     }
 
     if (phase === "recap") {
-      if (startLine === 0)
-        st.setBoard({ title: "What we learned today ⭐", lines: [] });
+      if (startLine === 0) st.setBoard({ title: "What we learned today ⭐", lines: [] });
       st.setBoardFocus(false);
       speak(lesson.recap.slice(startLine), {
         speaker: teacher,
@@ -187,6 +248,11 @@ export function useLessonEngine() {
     if (phase === "end") {
       st.setCaption("Class dismissed! Great job today. 🌟", teacher);
     }
+
+    if (phase === "dashboard") {
+      cancelRef.current?.();
+      stopSpeech();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, segmentIndex, lesson]);
 
@@ -211,30 +277,65 @@ export function useLessonEngine() {
   };
 
   // ------------------------------------------------------------------
-  // Live doubt: user raised hand and submitted a question → interrupt,
-  // ask the AI for real, answer on the board, then resume where we were.
+  // Doubt-safe participation:
+  // hand raised → class pauses, teacher calls YOUR name and waits →
+  // you ask → AI answers → "Is your doubt clear?" → yes: praise + classmate
+  // reaction; no: re-explained differently → resume at the exact sentence.
   // ------------------------------------------------------------------
+  useEffect(() => {
+    const st = s();
+    if (!lesson) return;
+    const name = st.config?.userName ?? "dear";
+
+    if (userHandRaised && !pendingDoubt && !["doubtWait", "doubt", "break", "paused", "immersive", "end", "attention"].includes(st.phase)) {
+      saveSpot();
+      cancelRef.current?.();
+      stopSpeech();
+      st.setPhase("doubtWait");
+      speak([`Yes ${name}? What is your question, my dear?`], { speaker: st.config?.teacher?.name });
+    }
+
+    if (!userHandRaised && st.phase === "doubtWait" && !pendingDoubt) {
+      // student changed their mind
+      cancelRef.current?.();
+      stopSpeech();
+      restoreSpot();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userHandRaised]);
+
   useEffect(() => {
     if (!pendingDoubt || !lesson) return;
     const st = s();
     if (st.phase === "doubt") return;
+    if (!interruptSaveRef.current) saveSpot(); // doubt typed without hand-raise path
 
-    const resume = { phase: st.phase, segmentIndex: st.segmentIndex };
-    const resumeLine = lineProgressRef.current;
     cancelRef.current?.();
     stopSpeech();
-    st.setResumePoint(resume);
     st.setPhase("doubt");
-    const teacher = st.config?.teacher?.name ?? "Teacher";
+    doubtAttemptsRef.current = 0;
+    lastDoubtRef.current = pendingDoubt;
+    answerCurrentDoubt(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingDoubt]);
 
-    speak([`That's a wonderful question! Let me think about it.`], {
+  const answerCurrentDoubt = async (reexplain) => {
+    const st = s();
+    const teacher = st.config?.teacher?.name ?? "Teacher";
+    const name = st.config?.userName ?? "dear";
+    doubtAttemptsRef.current += 1;
+
+    speak([reexplain ? "Hmm, let me explain it another way!" : "That's a wonderful question! Let me think."], {
       speaker: teacher,
       onDone: async () => {
         try {
-          const { data } = await askDoubt(pendingDoubt, st.config);
+          const { data } = await askDoubt(lastDoubtRef.current, st.config, {
+            studentName: name,
+            reexplain,
+          });
           const steps = data.boardSteps ?? [];
           if (steps.length) {
-            s().setBoard({ title: "Your question ✋", lines: [] });
+            s().setBoard({ title: `${name}'s question ✋`, lines: [] });
             s().setBoardFocus(true);
           }
           const per = Math.max(1, Math.ceil(data.spoken.length / Math.max(1, steps.length)));
@@ -247,48 +348,128 @@ export function useLessonEngine() {
                 s().addBoardLine(`${revealed + 1}. ${stripNum(steps[revealed])}`);
               }
             },
+            onDone: () => {
+              speak([`So ${name}, is your doubt clear now?`], {
+                speaker: teacher,
+                onDone: () => s().setDoubtCheck({ attempts: doubtAttemptsRef.current }),
+              });
+            },
+          });
+        } catch {
+          speak(["Hmm, I could not hear that properly. Let us continue, and you can ask me again!"], {
+            speaker: teacher,
             onDone: finishDoubt,
           });
-        } catch (err) {
-          speak(
-            ["Hmm, I could not hear that properly. Let us continue, and you can ask me again!"],
-            { speaker: teacher, onDone: finishDoubt }
-          );
         }
       },
     });
+  };
 
-    function finishDoubt() {
-      const st2 = s();
-      st2.setBoardFocus(false);
-      st2.setPendingDoubt(null);
-      st2.clearUserHand();
-      const rp = st2.resumePoint ?? { phase: "recap", segmentIndex: st2.segmentIndex };
-      st2.setResumePoint(null);
-      lineProgressRef.current = resumeLine;
-      st2.setSegmentIndex(rp.segmentIndex);
-      // restore board for the interrupted segment
-      const seg = st2.lesson.segments[rp.segmentIndex];
-      if (rp.phase === "teaching" && seg) {
-        st2.setBoard({ title: seg.heading, lines: [] });
-      }
-      st2.setPhase(rp.phase);
+  const answerDoubtCheck = (isClear) => {
+    const st = s();
+    st.setDoubtCheck(null);
+    const teacher = st.config?.teacher?.name ?? "Teacher";
+    const name = st.config?.userName ?? "dear";
+    const names = st.config?.studentNames ?? [];
+
+    if (isClear) {
+      const classmate = names[Math.floor(Math.random() * names.length)];
+      const reaction = CLASSMATE_REACTIONS[Math.floor(Math.random() * CLASSMATE_REACTIONS.length)];
+      speak([`Wonderful, ${name}! Never be afraid to ask questions.`], {
+        speaker: teacher,
+        onDone: () => {
+          if (classmate) {
+            const idx = names.indexOf(classmate);
+            s().setRaisedHandStudent(idx);
+            speak([reaction], {
+              ...CHILD_VOICE,
+              speaker: classmate,
+              onDone: () => {
+                s().setRaisedHandStudent(-1);
+                finishDoubt();
+              },
+            });
+          } else finishDoubt();
+        },
+      });
+    } else if (doubtAttemptsRef.current < 2) {
+      answerCurrentDoubt(true);
+    } else {
+      speak([`No problem, ${name}. Some ideas take time — we will explore this again after class, I promise!`], {
+        speaker: teacher,
+        onDone: finishDoubt,
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingDoubt]);
+  };
+
+  const finishDoubt = () => {
+    const st = s();
+    st.setBoardFocus(false);
+    st.setPendingDoubt(null);
+    st.clearUserHand();
+    st.setDoubtCheck(null);
+    restoreSpot();
+  };
 
   // ------------------------------------------------------------------
-  // Immersive Study (solar module): pause the lesson on entry, resume
-  // from the exact sentence on exit.
+  // User pause / resume (leave and come back later)
   // ------------------------------------------------------------------
-  const appMode = useLessonStore((st) => st.appMode);
+  const pauseClass = () => {
+    const st = s();
+    if (!st.lesson || ["paused", "break", "end", "dashboard"].includes(st.phase)) return;
+    saveSpot();
+    cancelRef.current?.();
+    stopSpeech();
+    st.setPhase("paused");
+    st.setCaption("Class paused. Come back whenever you are ready! ⏸", st.config?.teacher?.name);
+  };
+
+  const resumeClass = () => {
+    if (s().phase !== "paused") return;
+    restoreSpot();
+  };
+
+  // ------------------------------------------------------------------
+  // Attention-aware teaching: if the webcam sees no face for a while
+  // during teaching, the teacher stops and calls you by name.
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    const id = setInterval(() => {
+      const st = s();
+      if (!st.lesson || st.appMode !== "classroom") return;
+      if (!["intro", "teaching", "peerQuestion", "recap", "quiz"].includes(st.phase)) return;
+      if (!gestureState.enabled || !gestureState.lastFaceAt) return;
+      const now = Date.now();
+      if (now - gestureState.lastFaceAt < ATTENTION_AFTER_MS) return;
+      if (now < attentionCooldownRef.current) return;
+      attentionCooldownRef.current = now + ATTENTION_COOLDOWN_MS;
+
+      const name = st.config?.userName ?? "dear";
+      saveSpot();
+      cancelRef.current?.();
+      stopSpeech();
+      st.setPhase("attention");
+      speak([`${name}? Are you with me? Come back, we are learning something amazing!`], {
+        speaker: st.config?.teacher?.name,
+        onDone: restoreSpot,
+      });
+    }, 2500);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ------------------------------------------------------------------
+  // Immersive Study (solar module): pause on entry, resume on exit.
+  // ------------------------------------------------------------------
   const solarSaveRef = useRef(null);
   useEffect(() => {
     const st = s();
     if (appMode === "solar") {
       if (!lesson) return;
       solarSaveRef.current = {
-        phase: ["break", "doubt", "immersive"].includes(st.phase) ? "teaching" : st.phase,
+        phase: ["break", "doubt", "doubtWait", "paused", "attention", "immersive"].includes(st.phase)
+          ? "teaching"
+          : st.phase,
         segmentIndex: st.segmentIndex,
         line: lineProgressRef.current,
       };
@@ -319,5 +500,5 @@ export function useLessonEngine() {
     []
   );
 
-  return { resumeFromBreak };
+  return { resumeFromBreak, pauseClass, resumeClass, answerDoubtCheck };
 }

@@ -42,10 +42,11 @@ export const CURRICULUM = {
   },
 };
 
+// Each teacher has ONE fixed neural voice (Gemini TTS prebuilt voices).
 export const TEACHER_PRESETS = [
-  { name: "Miss Anaya", style: "warm and playful", voiceGender: "female", rate: 0.95, pitch: 1.15 },
-  { name: "Mr. Vikram", style: "calm and encouraging", voiceGender: "male", rate: 0.92, pitch: 0.95 },
-  { name: "Miss Sarah", style: "energetic and fun", voiceGender: "female", rate: 1.0, pitch: 1.2 },
+  { name: "Miss Anaya", style: "warm and playful", voiceGender: "female", voiceName: "Kore", rate: 0.95, pitch: 1.15 },
+  { name: "Mr. Vikram", style: "calm and encouraging", voiceGender: "male", voiceName: "Charon", rate: 0.92, pitch: 0.95 },
+  { name: "Miss Sarah", style: "energetic and fun", voiceGender: "female", voiceName: "Aoede", rate: 1.0, pitch: 1.2 },
 ];
 
 export const STUDENT_NAMES = ["Aarav", "Meera", "Kabir", "Zoya", "Ishaan", "Diya"];

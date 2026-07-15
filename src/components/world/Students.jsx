@@ -8,16 +8,18 @@ import { normalizeToHeight } from "../../lib/threeUtils";
 
 const TINTS = [0xffd1dc, 0xc9e4ff, 0xd6ffd1, 0xfff3c2, 0xe6d1ff, 0xffdcc2];
 
-// Two rows of desks facing the teacher/board. The x=-4.5..-8.5 gap keeps the
-// user's FPV sight-line to the teacher clear.
+// Real bench positions surveyed from the classroom model (2 rows × 3 columns).
+// Models are sunk so legs disappear behind the bench = seated look.
+// The user occupies the 2nd-row centre bench (see FPVCamera).
 export const SEATS = [
-  [-8.5, -7.95, -4],
-  [4, -7.95, -4],
-  [7.5, -7.95, -4],
-  [-8.5, -7.95, 3],
-  [4, -7.95, 3],
-  [7.5, -7.95, 3],
+  [-11, -7.95, -3.5],
+  [0, -7.95, -3.5],
+  [11, -7.95, -3.5],
+  [-11, -7.95, 5.5],
+  [11, -7.95, 5.5],
+  [13, -7.95, 0.5],
 ];
+const SEAT_SINK = 3.0;
 
 function Student({ index, name }) {
   const { scene, animations } = useGLTF("/models/peasant/scene.gltf");
@@ -78,9 +80,10 @@ function Student({ index, name }) {
   });
 
   const [x, y, z] = SEATS[index % SEATS.length];
-  const faceTeacher = Math.atan2(-12 - x, -14 - z) + Math.PI; // model rest pose faces -Z
+  // face the board (-Z); model rest pose faces -Z after the +PI correction
+  const faceBoard = Math.atan2(-0.4 * x, -16 - z) + Math.PI;
   return (
-    <group position={[x, y, z]} rotation={[0, faceTeacher, 0]} name={`student-${name}`}>
+    <group position={[x, y - SEAT_SINK, z]} rotation={[0, faceBoard, 0]} name={`student-${name}`}>
       <group ref={inner}>
         <primitive object={clone} />
       </group>
