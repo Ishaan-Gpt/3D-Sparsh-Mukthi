@@ -1,0 +1,208 @@
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* let camera controls receive mouse events */
+  font-family: "Segoe UI", "Comic Sans MS", sans-serif;
+  z-index: 20;
+}
+
+.hud button,
+.hud input,
+.hud-modal,
+.hud-break-card {
+  pointer-events: auto;
+}
+
+/* ---- top bar ---- */
+.hud-top {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: rgba(20, 30, 60, 0.72);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.hud-chip {
+  background: #ffd166;
+  color: #4a3200;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.85rem;
+}
+
+.hud-timer {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}
+
+/* ---- captions ---- */
+.hud-caption {
+  position: absolute;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(760px, 86vw);
+  background: rgba(15, 22, 45, 0.82);
+  color: #fff;
+  padding: 14px 22px;
+  border-radius: 18px;
+  font-size: 1.15rem;
+  line-height: 1.45;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+
+.hud-speaker {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffd166;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ---- side controls ---- */
+.hud-controls {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hud-btn {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.92);
+  color: #22335c;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: transform 0.12s;
+}
+
+.hud-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.hud-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hud-btn.raise {
+  background: #ffd166;
+  font-size: 1.1rem;
+}
+
+.hud-btn.cam.on {
+  background: #2fb36b;
+  color: #fff;
+}
+
+.hud-btn.primary {
+  background: #4f7cff;
+  color: #fff;
+}
+
+.hud-btn.mic.on {
+  background: #e5533a;
+  color: #fff;
+}
+
+.hud-btn.exit {
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 0.85rem;
+}
+
+/* ---- doubt modal ---- */
+.hud-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 15, 35, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.hud-modal {
+  background: #fff;
+  border-radius: 22px;
+  padding: 26px 30px;
+  width: min(520px, 90vw);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.hud-modal h2 {
+  margin: 0 0 14px;
+  color: #22335c;
+}
+
+.hud-modal input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 16px;
+  font-size: 1.05rem;
+  border: 2px solid #d5ddef;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+.hud-modal-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---- break / end overlay ---- */
+.hud-break {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(30, 45, 90, 0.92), rgba(60, 30, 90, 0.92));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.hud-break-card {
+  text-align: center;
+  color: #fff;
+  max-width: 480px;
+  padding: 20px;
+}
+
+.hud-break-card h1 {
+  font-size: 2.4rem;
+  margin-bottom: 8px;
+}
+
+.hud-break-timer {
+  font-size: 3.4rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin: 18px 0;
+  color: #ffd166;
+}
+
+.hud-btn.immersive {
+  background: linear-gradient(135deg, #5b4dff, #a04dd5);
+  color: #fff;
+  font-size: 1.02rem;
+}

@@ -1,0 +1,87 @@
+.gesture-panel {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.gesture-view {
+  position: relative;
+  width: 224px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
+  background: #101426;
+}
+
+.gesture-canvas {
+  width: 100%;
+  display: block;
+  aspect-ratio: 4 / 3;
+}
+
+.gesture-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+  background: rgba(16, 20, 38, 0.85);
+}
+
+.gesture-legend {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 4px 6px;
+  font-size: 0.62rem;
+  color: #ffffffd9;
+  background: rgba(10, 14, 30, 0.72);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.gesture-toggle {
+  border: none;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.9);
+  color: #22335c;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.palm-cursor {
+  position: fixed;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  border: 3px solid #38e07d;
+  background: rgba(56, 224, 125, 0.25);
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 60;
+}
+
+.palm-cursor.pointing {
+  border-color: #5fd4ff;
+  background: rgba(95, 212, 255, 0.3);
+}
+
+.palm-cursor.pinching {
+  border-color: #ff5d5d;
+  background: rgba(255, 93, 93, 0.35);
+  transform: scale(0.7);
+}

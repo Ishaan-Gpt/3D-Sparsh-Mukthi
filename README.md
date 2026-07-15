@@ -1,47 +1,47 @@
-![3D-school(1)-Cover](https://github.com/theringsofsaturn/3d-ai-school-threejs/assets/60050952/0349d7bf-7e18-4101-b018-4c15a1be4a3d)
+# 🏫 Sparsh Mukthi 3D — AI Virtual Classroom (Classes 1–4)
 
-# 3D AI Classroom
-This project is a 3D AI classroom application built using Three.js, React Three Fiber, and the OpenAI API. It provides an immersive learning experience with an AI-powered teacher that can engage in interactive conversations with users.
+A browser-based "Desktop VR" school for children aged 6–10. Pick a class, subject, topic and
+teacher on a kid-friendly dashboard — then step into a real 3D classroom where an AI teacher
+plans and delivers a full spoken lesson: teaching segments with a live whiteboard, curious
+classmates who raise their hands and ask questions, step-by-step solving of *your* doubt on the
+board, enforced eye-rest breaks, a recap and a quiz.
 
-# Features
-- 3D classroom environment created with Blender
-- AI-powered teacher avatar with chat capabilities
-- Animated 3D models using Mixamo
-- Voice recognition and text-to-speech integration
-- Chat history feature
-- Express.js server for handling API requests
-- Technologies Used
-- Three.js
-- React Three Fiber
-- OpenAI API
-- Blender
-- Mixamo
-- Express.js
+Built on React Three Fiber + Three.js, powered by Gemini (`gemini-3-flash-preview`, structured
+JSON lesson plans) with Claude/OpenAI fallbacks, browser speech synthesis/recognition, and
+MediaPipe webcam hand-raise detection. See [claude.md](claude.md) for the full architecture.
 
-# Getting Started
-Clone the repository: git clone [repository-url]
-Install dependencies: npm install
-Set up the OpenAI API key in a .env file
-Start the development server: npm start
-start the proxy server: node proxy.js
-Open the application in your browser: http://localhost:3000
+## Features
 
-# Usage
-Navigate through the 3D classroom environment using the mouse and keyboard controls
-Interact with the AI teacher by typing or speaking your questions
-The AI teacher will respond with both text and speech
-View the chat history to keep track of previous conversations
+- 🧭 **Setup dashboard** — class 1–4, subject → topic curriculum, teacher persona, classmate
+  count, session length, break interval, and an optional custom doubt.
+- 🧑‍🏫 **AI teacher avatar** — animation state machine (idle / think / gesture) driven by real
+  TTS: the lesson is literally paced by speech, not timers.
+- 🧒 **Virtual classmates** — skeleton-cloned avatars, desynced idles, and a real raised hand
+  when it's their turn to ask the AI-written peer question.
+- 📝 **Live whiteboard** — a canvas texture where headings, bullets and numbered solution steps
+  appear in sync with what the teacher is saying; the camera flies in for solving.
+- ✋ **Ask anytime** — button, voice (hold-to-speak), or raise your *real* hand at the webcam
+  (MediaPipe, fully local). The teacher pauses, answers your question via the AI, writes steps
+  on the board, then resumes exactly where she left off.
+- 🧘 **Break enforcement** — timed calm-screen breaks with a countdown and early-resume.
+- 🎬 **Camera direction** — cinematic shots per lesson phase; free orbit stays available.
 
-# Contributing
-Contributions are welcome! If you have any suggestions, improvements, or bug fixes, please open an issue or submit a pull request.
+## Run it
 
-# License
-This project is licensed under the MIT License.
+```bash
+# 1. AI proxy (port 3001) — keys live in proxy-server/.env
+#    GEMINI_API_KEY=... (primary), CLAUDE_API_KEY / OPENAI_API_KEY (fallbacks)
+cd proxy-server && npm install && node proxy.js
 
-# Contact
-For any questions or inquiries, please contact Emilian Kasemi at emiliankasemi@gmail.com.
+# 2. Frontend (port 5173)
+npm install
+npm run dev
+```
 
-# Connect with me
-LinkedIn: https://www.linkedin.com/in/emilian-kasemi/
-YouTube: https://www.youtube.com/c/EmilianKasemi
+Open http://localhost:5173 in Chrome/Edge (best speech support), set up your class, and enter.
 
+## Credits
+
+3D classroom scene and avatar assets from the original
+[3d-ai-school-threejs](https://github.com/theringsofsaturn/3d-ai-school-threejs) project by
+Emilian Kasemi (MIT licensed).
