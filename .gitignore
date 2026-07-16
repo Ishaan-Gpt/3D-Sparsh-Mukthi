@@ -28,3 +28,8 @@ dist-ssr
 .env.local
 .env.*
 proxy-server/.env
+
+# local TTS runtime (large model files + venv, never committed)
+orpheus-server/.venv/
+orpheus-server/*.onnx
+orpheus-server/*.bin

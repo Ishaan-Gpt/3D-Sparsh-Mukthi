@@ -17,6 +17,21 @@ speakLines()  →  POST /api/tts (proxy)  →  1. Orpheus (this server, if up)
 If this server is not running, the proxy skips it (with a 60s back-off after a
 failure) and the existing Gemini → browser chain works exactly as before.
 
+## Option 0 — CPU machines (no NVIDIA GPU): `cpu_server.py` ✅ CURRENTLY IN USE
+
+Orpheus (a 3B LLM) cannot run realtime on a CPU. `cpu_server.py` serves the
+**same endpoint** powered by Kokoro-82M (near-SOTA neural TTS, realtime-ish on
+CPU via ONNX), with each Orpheus voice name mapped to a distinct Kokoro voice —
+so per-character voices are preserved and the proxy needs no changes.
+
+```bash
+cd orpheus-server
+py -3.11 -m venv .venv
+.venv\Scripts\pip install kokoro-onnx soundfile fastapi uvicorn
+# model files (already downloaded): kokoro-v1.0.onnx + voices-v1.0.bin
+.venv\Scripts\python cpu_server.py     # http://localhost:5005
+```
+
 ## Option A — run this wrapper (needs an NVIDIA GPU, ~16GB VRAM)
 
 ```bash
