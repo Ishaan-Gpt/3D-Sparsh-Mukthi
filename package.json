@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n ai,web -c yellow,cyan \"node proxy-server/proxy.js\" \"vite\"",
+    "dev": "concurrently -n ai,web -c yellow,cyan \"node proxy-server/proxy.js\" \"vite --port 5174 --strictPort\"",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "dev:web": "vite",
+    "dev:web": "vite --port 5174 --strictPort",
     "dev:ai": "node proxy-server/proxy.js"
   },
   "dependencies": {
