@@ -4,10 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n ai,web -c yellow,cyan \"node proxy-server/proxy.js\" \"vite\"",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:web": "vite",
+    "dev:ai": "node proxy-server/proxy.js"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.35",
@@ -24,6 +26,7 @@
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^10.0.3",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",

@@ -1,43 +1,23 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
-import { SkeletonUtils } from "three-stdlib";
 import { useLessonStore } from "../../store/useLessonStore";
 import { bodyById } from "../../data/solarData";
 import { bodyPositions, cameraGoal } from "./SolarSystem";
 import { speakLines, stopSpeech } from "../../lib/tts";
-import { normalizeToHeight } from "../../lib/threeUtils";
 
 /**
- * Guided "Play animation" mode: the teacher flies from the whole-system view
- * to each planet in turn, narrating (TTS) with a floating text board beside
- * him. Camera, teacher and board all follow the current tour stop.
+ * Guided "Play animation" mode: the camera flies from the whole-system view
+ * to each planet in turn while the teacher's VOICE narrates (TTS) and a
+ * floating text board writes the key points beside the planet.
+ * The user can still orbit freely and zoom in/out during the tour.
  */
 export function GuidedTour() {
   const tour = useLessonStore((s) => s.tour);
   const tourStep = useLessonStore((s) => s.tourStep);
   const solarBoard = useLessonStore((s) => s.solarBoard);
-  const teacherRef = useRef();
   const boardRef = useRef();
   const cancelRef = useRef(null);
-
-  const { scene, animations } = useGLTF("/models/cop/scene.gltf");
-  const teacherModel = useMemo(() => SkeletonUtils.clone(scene), [scene]);
-  const mixer = useMemo(() => new THREE.AnimationMixer(teacherModel), [teacherModel]);
-  useEffect(() => {
-    const clip =
-      animations.find((a) => a.name === "Breathing Idle") ??
-      animations.find((a) => /idle/i.test(a.name)) ??
-      animations[0];
-    if (clip) mixer.clipAction(clip).play();
-    return () => mixer.stopAllAction();
-  }, [animations, mixer]);
-
-  const teacherInner = useRef();
-  useEffect(() => {
-    if (teacherInner.current) normalizeToHeight(teacherInner.current, 1); // unit height; outer group scales per stop
-  }, []);
 
   // drive camera + narration per stop
   useEffect(() => {
@@ -54,6 +34,8 @@ export function GuidedTour() {
     cancelRef.current?.();
     cancelRef.current = speakLines(stop.spoken, {
       voiceGender: teacher.voiceGender,
+      voiceName: teacher.voiceName,
+      styleNote: `${teacher.name ?? "a teacher"}, a ${teacher.style ?? "warm"} Indian primary school teacher`,
       rate: teacher.rate,
       pitch: teacher.pitch,
       onLineStart: (line, i) => {
@@ -94,7 +76,6 @@ export function GuidedTour() {
   );
 
   useFrame(({ camera }, delta) => {
-    mixer.update(delta);
     if (!tour) return;
     const stop = tour.stops[tourStep];
     if (!stop) return;
@@ -113,46 +94,25 @@ export function GuidedTour() {
     cameraGoal.target.copy(center);
     cameraGoal.radius = viewR;
 
-    // teacher + board float beside the subject, always facing you
-    const right = new THREE.Vector3().subVectors(camera.position, center).normalize();
-    const side = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), right).normalize();
-    const scaleT = viewR * 0.16;
-
-    if (teacherRef.current) {
-      const p = center
-        .clone()
-        .addScaledVector(side, viewR * 0.34)
-        .addScaledVector(right, viewR * 0.25)
-        .add(new THREE.Vector3(0, -scaleT * 0.5, 0));
-      teacherRef.current.position.lerp(p, 1 - Math.exp(-delta * 3));
-      teacherRef.current.scale.setScalar(
-        THREE.MathUtils.lerp(teacherRef.current.scale.x || scaleT, scaleT, 0.1)
-      );
-      teacherRef.current.lookAt(camera.position);
-    }
+    // text board floats beside the subject, always facing you
     if (boardRef.current) {
+      const right = new THREE.Vector3().subVectors(camera.position, center).normalize();
+      const side = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), right).normalize();
       const p = center
         .clone()
-        .addScaledVector(side, -viewR * 0.3)
+        .addScaledVector(side, -viewR * 0.32)
         .addScaledVector(right, viewR * 0.18)
         .add(new THREE.Vector3(0, viewR * 0.1, 0));
       boardRef.current.position.lerp(p, 1 - Math.exp(-delta * 3));
-      const s = viewR * 0.011;
+      const s = viewR * 0.012;
       boardRef.current.scale.setScalar(THREE.MathUtils.lerp(boardRef.current.scale.x || s, s, 0.1));
       boardRef.current.lookAt(camera.position);
     }
   });
 
   return (
-    <group>
-      <group ref={teacherRef}>
-        <group ref={teacherInner}>
-          <primitive object={teacherModel} />
-        </group>
-      </group>
-      <group ref={boardRef}>
-        <TextBoard title={solarBoard.title} lines={solarBoard.lines} />
-      </group>
+    <group ref={boardRef}>
+      <TextBoard title={solarBoard.title} lines={solarBoard.lines} />
     </group>
   );
 }

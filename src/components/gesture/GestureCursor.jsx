@@ -17,6 +17,7 @@ export function GestureCursor() {
         el.style.top = `${gestureState.y * 100}%`;
         el.classList.toggle("pinching", gestureState.pinching);
         el.classList.toggle("pointing", gestureState.pointing);
+        el.classList.toggle("clicking", gestureState.clickPose);
       } else {
         el.style.opacity = "0";
       }

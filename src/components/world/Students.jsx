@@ -19,7 +19,7 @@ export const SEATS = [
   [11, -7.95, 5.5],
   [13, -7.95, 0.5],
 ];
-const SEAT_SINK = 3.0;
+const SEAT_SINK = 1.6; // just enough that the bench hides the legs
 
 function Student({ index, name }) {
   const { scene, animations } = useGLTF("/models/peasant/scene.gltf");
@@ -67,7 +67,7 @@ function Student({ index, name }) {
     mixer.update(delta);
     // measure AFTER the idle pose applies (bind pose lies down!)
     if (normalized.current >= 0 && ++normalized.current > 4 && inner.current) {
-      if (normalizeToHeight(inner.current, 9.5 + (index % 3) * 0.4)) normalized.current = -1;
+      if (normalizeToHeight(inner.current, 8.8 + (index % 3) * 0.3)) normalized.current = -1;
     }
     // procedural arm raise (peasant has no raise-hand clip)
     raiseAmount.current = THREE.MathUtils.lerp(raiseAmount.current, isAsking ? 1 : 0, delta * 5);

@@ -11,9 +11,13 @@ const FACE_MODEL_URL =
 
 const RAISE_MS = 3000;
 const RAISE_COOLDOWN_MS = 6000;
-const PINCH_ON = 0.35; // pinch ratio thresholds (hysteresis)
+const PINCH_ON = 0.35; // thumb-index ratio thresholds (hold = zoom)
 const PINCH_OFF = 0.45;
-const TAP_MS = 450; // pinch shorter than this = "click"
+// virtual-mouse tuning (inspired by the classic PyAutoGUI touchless mouse)
+const FRAME_REDUCTION = 0.16; // dead border of the camera frame
+const SMOOTHENING = 5; // cursor easing divisor
+const CLICK_ON = 0.55; // index↔middle tip distance / hand size → click
+const CLICK_OFF = 0.75; // must separate past this to re-arm (no repeat clicks)
 
 const CONNECTIONS = [
   [0, 1], [1, 2], [2, 3], [3, 4],
@@ -35,16 +39,21 @@ function analyse(lm) {
   }
   const extended = Object.values(ext).filter(Boolean).length;
   const handSize = Math.max(dist(wrist, lm[9]), 1e-3);
-  const pointing = ext.index && !ext.middle && !ext.ring && !ext.pinky;
   return {
     palmOpen: extended >= 4,
-    pointing,
-    pinch: dist(lm[4], lm[8]) / handSize,
-    // control point: index fingertip in cursor mode, palm center otherwise
-    cx: pointing ? lm[8].x : lm[9].x,
-    cy: pointing ? lm[8].y : lm[9].y,
+    pointing: ext.index && !ext.middle && !ext.ring && !ext.pinky, // ☝️ cursor
+    clickPose: ext.index && ext.middle && !ext.ring && !ext.pinky, // ✌️ click
+    clickDist: dist(lm[8], lm[12]) / handSize, // index↔middle gap
+    pinch: dist(lm[4], lm[8]) / handSize, // thumb↔index (zoom)
+    ix: lm[8].x, // index fingertip (cursor)
+    iy: lm[8].y,
+    px: lm[9].x, // palm centre (look-around)
+    py: lm[9].y,
   };
 }
+
+// map camera coords to screen with a dead border, like np.interp + clamp
+const interp = (v) => Math.min(1, Math.max(0, (v - FRAME_REDUCTION) / (1 - 2 * FRAME_REDUCTION)));
 
 /**
  * Gesture-first control panel: always-on webcam preview (bottom-right) with
@@ -71,7 +80,7 @@ export function GesturePanel() {
     let stream, landmarker, raf;
     let raisedSince = 0;
     let raiseCooldownUntil = 0;
-    let pinchStartAt = 0;
+    let clickArmed = true; // latched: one click per ✌️-close, no repeats while held
 
     (async () => {
       try {
@@ -137,33 +146,40 @@ export function GesturePanel() {
             gestureState.present = false;
             gestureState.palmOpen = false;
             gestureState.pointing = false;
+            gestureState.clickPose = false;
             gestureState.pinching = false;
             gestureState.raiseProgress = 0;
             raisedSince = 0;
+            clickArmed = true;
             return;
           }
 
           const a = analyse(lm);
+          const now = Date.now();
           gestureState.present = true;
           gestureState.palmOpen = a.palmOpen;
           gestureState.pointing = a.pointing;
-          gestureState.x = 1 - a.cx; // mirror so moving right looks right
-          gestureState.y = a.cy;
+          gestureState.clickPose = a.clickPose;
           gestureState.pinch = a.pinch;
+          // look-around channel: palm centre, mirrored (raw — consumers smooth)
+          gestureState.lookX = 1 - a.px;
+          gestureState.lookY = a.py;
 
-          // --- pinch with hysteresis + tap detection ---
-          const now = Date.now();
-          if (!gestureState.pinching && a.pinch < PINCH_ON) {
-            gestureState.pinching = true;
-            pinchStartAt = now;
-          } else if (gestureState.pinching && a.pinch > PINCH_OFF) {
-            gestureState.pinching = false;
-            if (now - pinchStartAt < TAP_MS) {
-              // fast pinch = click: UI elements get a real DOM click; the 3D
-              // canvas gets a raycast pick via the pinch-select event.
-              const px = gestureState.x * window.innerWidth;
-              const py = gestureState.y * window.innerHeight;
-              const el = document.elementFromPoint(px, py);
+          // --- ☝️ cursor: index fingertip, dead-border mapped + smoothed ---
+          if (a.pointing || a.clickPose) {
+            const tx = interp(1 - a.ix); // mirror
+            const ty = interp(a.iy);
+            gestureState.x += (tx - gestureState.x) / SMOOTHENING;
+            gestureState.y += (ty - gestureState.y) / SMOOTHENING;
+          }
+
+          // --- ✌️ click: index+middle together = ONE click, re-arm on separation ---
+          if (a.clickPose) {
+            if (clickArmed && a.clickDist < CLICK_ON) {
+              clickArmed = false;
+              const cx = gestureState.x * window.innerWidth;
+              const cy = gestureState.y * window.innerHeight;
+              const el = document.elementFromPoint(cx, cy);
               if (el && el.tagName !== "CANVAS" && !el.closest(".gesture-panel")) {
                 el.click?.();
                 el.focus?.();
@@ -174,11 +190,22 @@ export function GesturePanel() {
                   })
                 );
               }
+            } else if (!clickArmed && a.clickDist > CLICK_OFF) {
+              clickArmed = true;
             }
+          } else {
+            clickArmed = true;
           }
 
-          // --- hand raise: open palm in upper half, held 3s ---
-          const raised = a.palmOpen && a.cy < 0.55 && !gestureState.pinching;
+          // --- 🤏 hold pinch = zoom (thumb-index, hysteresis; no click here) ---
+          if (!gestureState.pinching && a.pinch < PINCH_ON && !a.clickPose) {
+            gestureState.pinching = true;
+          } else if (gestureState.pinching && (a.pinch > PINCH_OFF || a.clickPose)) {
+            gestureState.pinching = false;
+          }
+
+          // --- ✋ hand raise: open palm in upper half, held 3s ---
+          const raised = a.palmOpen && a.py < 0.55 && !gestureState.pinching;
           if (raised && now > raiseCooldownUntil) {
             if (!raisedSince) raisedSince = now;
             gestureState.raiseProgress = Math.min(1, (now - raisedSince) / RAISE_MS);
@@ -197,11 +224,13 @@ export function GesturePanel() {
           // --- draw skeleton (mirrored) ---
           ctx.strokeStyle = gestureState.pinching
             ? "#ff5d5d"
-            : a.pointing
-              ? "#5fd4ff"
-              : a.palmOpen
-                ? "#38e07d"
-                : "#ffd166";
+            : a.clickPose
+              ? "#c17bff"
+              : a.pointing
+                ? "#5fd4ff"
+                : a.palmOpen
+                  ? "#38e07d"
+                  : "#ffd166";
           ctx.lineWidth = 3;
           for (const [i, j] of CONNECTIONS) {
             ctx.beginPath();
@@ -256,7 +285,7 @@ export function GesturePanel() {
           {status === "starting" && <div className="gesture-status">Starting camera…</div>}
           {status === "error" && <div className="gesture-status">⚠️ Camera unavailable</div>}
           <div className="gesture-legend">
-            ✋ 3s = ask · 🖐 look · ☝️ cursor · 🤏 zoom / fast-pinch = click
+            ✋ 3s ask · 🖐 look · ☝️ cursor · ✌️ close = click · 🤏 zoom
           </div>
         </div>
       )}

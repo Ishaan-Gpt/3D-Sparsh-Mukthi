@@ -15,7 +15,8 @@ const Anthropic = require("@anthropic-ai/sdk");
 const dotenv = require("dotenv");
 const cors = require("cors");
 
-dotenv.config();
+// load .env from this file's folder regardless of where node was launched
+dotenv.config({ path: require("path").join(__dirname, ".env") });
 
 const anthropic = process.env.CLAUDE_API_KEY
   ? new Anthropic({ apiKey: process.env.CLAUDE_API_KEY })

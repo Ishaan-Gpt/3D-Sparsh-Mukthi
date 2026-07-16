@@ -1,4 +1,5 @@
-const API_BASE = "http://localhost:3001";
+// Same-origin: Vite dev server proxies /api → the AI proxy (port 3001).
+const API_BASE = "";
 
 async function post(path, body) {
   const res = await fetch(`${API_BASE}${path}`, {

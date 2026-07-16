@@ -83,8 +83,8 @@ export function FPVCamera() {
     let gYawT = 0;
     let gPitchT = 0;
     if (gestureState.enabled && gestureState.present && gestureState.palmOpen && !gestureState.pinching) {
-      gYawT = -(gestureState.x - 0.5) * GESTURE_YAW_RANGE;
-      gPitchT = -(gestureState.y - 0.5) * GESTURE_PITCH_RANGE;
+      gYawT = -(gestureState.lookX - 0.5) * GESTURE_YAW_RANGE;
+      gPitchT = -(gestureState.lookY - 0.5) * GESTURE_PITCH_RANGE;
     }
     smooth.current.gYaw += (gYawT - smooth.current.gYaw) * k;
     smooth.current.gPitch += (gPitchT - smooth.current.gPitch) * k;
@@ -98,10 +98,12 @@ export function FPVCamera() {
     smooth.current.yaw += (yawT - smooth.current.yaw) * k;
     smooth.current.pitch += (pitchT - smooth.current.pitch) * k;
 
-    camera.position.copy(SEAT);
+    // zoom = real dolly toward the whiteboard + narrower FOV: the board
+    // canvas genuinely fills the screen at full pinch.
+    const dollyTarget = new THREE.Vector3(0, 0.6, -10.5);
+    camera.position.copy(SEAT).lerp(dollyTarget, THREE.MathUtils.clamp(zoomK, 0, 1) * 0.95);
     camera.rotation.set(smooth.current.pitch, smooth.current.yaw, 0, "YXZ");
 
-    // pinch zoom (hold pinch; tighter pinch = closer) + wheel fallback
     const fovT = BASE_FOV - (BASE_FOV - MAX_ZOOM_FOV) * zoomK;
     smooth.current.fov += (fovT - smooth.current.fov) * k;
     if (Math.abs(camera.fov - smooth.current.fov) > 0.01) {

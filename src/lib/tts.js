@@ -63,7 +63,7 @@ async function fetchLineAudio(text, opts, retries = 1) {
   if (audioCache.has(key)) return audioCache.get(key);
   for (let attempt = 0; ; attempt++) {
     try {
-      const res = await fetch("http://localhost:3001/api/tts", {
+      const res = await fetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, voiceName, style }),

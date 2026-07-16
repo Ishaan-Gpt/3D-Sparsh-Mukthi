@@ -2,8 +2,27 @@ import { useEffect, useRef, useState } from "react";
 import { useLessonStore } from "../../store/useLessonStore";
 import { bodyById, BODIES, TOUR_ORDER } from "../../data/solarData";
 import { fetchTour, askDoubt } from "../../lib/api";
-import { gestureState } from "../../lib/gestureState";
+import { cameraGoal } from "./SolarSystem";
 import "./Solar.css";
+
+function ZoomControls() {
+  const zoom = (f) => {
+    cameraGoal.bias = Math.min(4, Math.max(0.3, cameraGoal.bias * f));
+  };
+  return (
+    <div className="solar-zoom">
+      <button className="solar-btn round" title="Zoom in" onClick={() => zoom(0.72)}>
+        ➕
+      </button>
+      <button className="solar-btn round" title="Zoom out" onClick={() => zoom(1.4)}>
+        ➖
+      </button>
+      <button className="solar-btn round" title="Reset view" onClick={() => (cameraGoal.bias = 1)}>
+        🎯
+      </button>
+    </div>
+  );
+}
 
 // Curated fallback narration (used if the AI proxy is unreachable).
 function localTour() {
@@ -116,6 +135,9 @@ export function SolarHUD() {
           </div>
         </div>
       )}
+
+      {/* zoom controls — available while exploring AND during the tour */}
+      {solarMode !== "choose" && <ZoomControls />}
 
       {/* interact: hint + info card */}
       {solarMode === "interact" && !body && (

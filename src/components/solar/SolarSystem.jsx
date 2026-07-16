@@ -164,7 +164,8 @@ function Moon({ planetRadius, paused }) {
 export const cameraGoal = {
   target: new THREE.Vector3(0, 0, 0),
   radius: 90,
-  driven: false, // true while the tour drives the camera
+  bias: 1, // user zoom multiplier (buttons / wheel / pinch) — works in every mode
+  driven: false, // true while the tour drives target+radius (orbit stays free)
 };
 
 function SolarCameraRig() {
@@ -182,7 +183,8 @@ function SolarCameraRig() {
       mouse.current.lastY = e.clientY;
     };
     const move = (e) => {
-      if (!mouse.current.dragging || cameraGoal.driven) return;
+      if (!mouse.current.dragging) return;
+      // orbiting is ALWAYS allowed — even during the guided tour
       sph.current.theta -= (e.clientX - mouse.current.lastX) * 0.005;
       sph.current.phi = THREE.MathUtils.clamp(
         sph.current.phi - (e.clientY - mouse.current.lastY) * 0.004,
@@ -194,8 +196,7 @@ function SolarCameraRig() {
     };
     const up = () => (mouse.current.dragging = false);
     const wheel = (e) => {
-      if (cameraGoal.driven) return;
-      cameraGoal.radius = THREE.MathUtils.clamp(cameraGoal.radius * (1 + e.deltaY * 0.001), 4, 160);
+      cameraGoal.bias = THREE.MathUtils.clamp(cameraGoal.bias * (1 + e.deltaY * 0.001), 0.3, 4);
     };
     window.addEventListener("pointerdown", down);
     window.addEventListener("pointermove", move);
@@ -223,23 +224,20 @@ function SolarCameraRig() {
   useFrame((_, delta) => {
     const k = 1 - Math.exp(-delta * 3);
 
+    // gesture orbit: open palm steers around the system (all modes)
+    if (gestureState.enabled && gestureState.present && gestureState.palmOpen && !gestureState.pinching) {
+      const tTheta = (gestureState.lookX - 0.5) * Math.PI * 2.2;
+      const tPhi = THREE.MathUtils.clamp(0.5 + gestureState.lookY * 1.8, 0.25, Math.PI - 0.35);
+      sph.current.theta += (tTheta - sph.current.theta) * k * 0.7;
+      sph.current.phi += (tPhi - sph.current.phi) * k * 0.7;
+    }
+    // hold-pinch dollies the zoom bias in; release keeps it (wheel/buttons adjust too)
+    if (gestureState.enabled && gestureState.pinching) {
+      const zoomK = THREE.MathUtils.clamp((0.42 - gestureState.pinch) / 0.3, 0, 1);
+      cameraGoal.bias = THREE.MathUtils.clamp(cameraGoal.bias * (1 - zoomK * 0.02), 0.3, 4);
+    }
+
     if (!cameraGoal.driven) {
-      // gesture orbit: open palm steers around the system
-      if (gestureState.enabled && gestureState.present && gestureState.palmOpen && !gestureState.pinching) {
-        const tTheta = (gestureState.x - 0.5) * Math.PI * 2.2;
-        const tPhi = THREE.MathUtils.clamp(0.5 + gestureState.y * 1.8, 0.25, Math.PI - 0.35);
-        sph.current.theta += (tTheta - sph.current.theta) * k * 0.7;
-        sph.current.phi += (tPhi - sph.current.phi) * k * 0.7;
-      }
-      // pinch zoom: pinch amount dollies in
-      if (gestureState.enabled && gestureState.pinching) {
-        const zoomK = THREE.MathUtils.clamp((0.42 - gestureState.pinch) / 0.3, 0, 1);
-        const minR = useLessonStore.getState().selectedBody
-          ? Math.max(3, (BODIES.find((b) => b.id === useLessonStore.getState().selectedBody)?.radius ?? 1) * 3)
-          : 12;
-        const want = THREE.MathUtils.lerp(cameraGoal.radius, minR, zoomK * 0.05);
-        cameraGoal.radius = want;
-      }
       cameraGoal.target.copy(
         useLessonStore.getState().selectedBody
           ? bodyPositions[useLessonStore.getState().selectedBody]
@@ -247,7 +245,8 @@ function SolarCameraRig() {
       );
     }
 
-    sph.current.radius += (cameraGoal.radius - sph.current.radius) * k;
+    const wantR = THREE.MathUtils.clamp(cameraGoal.radius * cameraGoal.bias, 3, 220);
+    sph.current.radius += (wantR - sph.current.radius) * k;
     target.current.lerp(cameraGoal.target, k);
 
     const { theta, phi, radius } = sph.current;
