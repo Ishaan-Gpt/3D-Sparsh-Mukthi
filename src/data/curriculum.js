@@ -42,11 +42,25 @@ export const CURRICULUM = {
   },
 };
 
-// Each teacher has ONE fixed neural voice (Gemini TTS prebuilt voices).
+// Each teacher has ONE fixed neural voice: an Orpheus voice (most human,
+// used when the Orpheus TTS server is up) + a Gemini prebuilt voice fallback.
 export const TEACHER_PRESETS = [
-  { name: "Miss Anaya", style: "warm and playful", voiceGender: "female", voiceName: "Kore", rate: 0.95, pitch: 1.15 },
-  { name: "Mr. Vikram", style: "calm and encouraging", voiceGender: "male", voiceName: "Charon", rate: 0.92, pitch: 0.95 },
-  { name: "Miss Sarah", style: "energetic and fun", voiceGender: "female", voiceName: "Aoede", rate: 1.0, pitch: 1.2 },
+  { name: "Miss Anaya", style: "warm and playful", voiceGender: "female", voiceName: "Kore", orpheusVoice: "tara", rate: 0.95, pitch: 1.15 },
+  { name: "Mr. Vikram", style: "calm and encouraging", voiceGender: "male", voiceName: "Charon", orpheusVoice: "leo", rate: 0.92, pitch: 0.95 },
+  { name: "Miss Sarah", style: "energetic and fun", voiceGender: "female", voiceName: "Aoede", orpheusVoice: "jess", rate: 1.0, pitch: 1.2 },
 ];
 
 export const STUDENT_NAMES = ["Aarav", "Meera", "Kabir", "Zoya", "Ishaan", "Diya"];
+
+// Every classmate gets their OWN voice (Orpheus + Gemini fallback + browser
+// pitch/rate jitter) so the class sounds like different real children.
+export const STUDENT_VOICES = [
+  { voiceGender: "male", voiceName: "Puck", orpheusVoice: "zac", rate: 1.06, pitch: 1.4 },
+  { voiceGender: "female", voiceName: "Leda", orpheusVoice: "mia", rate: 1.04, pitch: 1.5 },
+  { voiceGender: "male", voiceName: "Zephyr", orpheusVoice: "dan", rate: 1.08, pitch: 1.35 },
+  { voiceGender: "female", voiceName: "Callirrhoe", orpheusVoice: "zoe", rate: 1.02, pitch: 1.55 },
+  { voiceGender: "male", voiceName: "Fenrir", orpheusVoice: "leo", rate: 1.1, pitch: 1.3 },
+  { voiceGender: "female", voiceName: "Autonoe", orpheusVoice: "leah", rate: 1.0, pitch: 1.45 },
+];
+
+export const studentVoice = (index) => STUDENT_VOICES[Math.abs(index) % STUDENT_VOICES.length];

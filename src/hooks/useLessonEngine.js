@@ -1,16 +1,15 @@
 import { useEffect, useRef } from "react";
 import { useLessonStore } from "../store/useLessonStore";
-import { speakLines, stopSpeech } from "../lib/tts";
+import { speakLines, stopSpeech, warmSpeechCache } from "../lib/tts";
 import { askDoubt } from "../lib/api";
 import { gestureState } from "../lib/gestureState";
+import { studentVoice } from "../data/curriculum";
 
-const CHILD_VOICE = {
-  voiceGender: "female",
-  voiceName: "Puck",
+// Each classmate speaks with their OWN voice (Orpheus/Gemini/browser chain).
+const childVoice = (index) => ({
+  ...studentVoice(index),
   styleNote: "an excited, curious 8-year-old Indian school kid",
-  rate: 1.05,
-  pitch: 1.45,
-};
+});
 const BREAK_SECONDS = 120;
 const ATTENTION_AFTER_MS = 12000; // no face this long → teacher checks on you
 const ATTENTION_COOLDOWN_MS = 45000;
@@ -24,6 +23,51 @@ const CLASSMATE_REACTIONS = [
   "That was a good question!",
   "Now I understand it too!",
 ];
+
+// ---------------------------------------------------------------------------
+// Lesson progress: exact % of planned spoken lines completed (replaces the
+// wall-clock timer, which drifted whenever the class paused or detoured).
+// ---------------------------------------------------------------------------
+function lessonProgress(lesson, phase, segIdx, line) {
+  if (!lesson) return null;
+  if (phase === "end") return 1;
+  const segs = lesson.segments ?? [];
+  const segLen = (sg) => (sg.sentences?.length ?? 0) + 1 + (sg.peerQuestion?.answer?.length ?? 0);
+  let total = lesson.intro?.length ?? 0;
+  const segStart = [];
+  for (const sg of segs) {
+    segStart.push(total);
+    total += segLen(sg);
+  }
+  const wbStart = total;
+  total += lesson.doubtSolution?.spoken?.length ?? 0;
+  const recapStart = total;
+  total += lesson.recap?.length ?? 0;
+  const quizStart = total;
+  total += (lesson.quiz?.length ?? 0) * 3 + 1; // question + prompt + feedback each, + goodbye
+
+  let done;
+  if (phase === "intro") done = line;
+  else if (phase === "teaching") done = (segStart[segIdx] ?? 0) + line;
+  else if (phase === "peerQuestion") done = (segStart[segIdx] ?? 0) + (segs[segIdx]?.sentences?.length ?? 0) + 1;
+  else if (phase === "whiteboard") done = wbStart + line;
+  else if (phase === "recap") done = recapStart + line;
+  else if (phase === "quiz") done = quizStart + line * 3;
+  else return null; // interruptions (doubt/break/pause) keep the last value
+  return Math.min(0.99, Math.max(0, done / Math.max(1, total)));
+}
+
+// child-safe shuffle with a stable seed per question (no reshuffle on resume)
+function shuffled(arr, seed) {
+  const a = [...arr];
+  let s = seed + 1;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = Math.floor((s / 233280) * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 /**
  * The conductor. AI proposes content (the lesson plan); this engine decides
@@ -48,6 +92,7 @@ export function useLessonEngine() {
     return {
       voiceGender: t.voiceGender,
       voiceName: t.voiceName ?? (t.voiceGender === "male" ? "Charon" : "Kore"),
+      orpheusVoice: t.orpheusVoice ?? (t.voiceGender === "male" ? "leo" : "tara"),
       styleNote: `${t.name ?? "a teacher"}, a ${t.style ?? "warm"} Indian primary school teacher`,
       rate: t.rate,
       pitch: t.pitch,
@@ -63,6 +108,9 @@ export function useLessonEngine() {
         s().setSpeaking(true);
         s().setCaption(line, opts?.speaker ?? s().config?.teacher?.name ?? "Teacher");
         opts?.onLineStart?.(line, i);
+        const st = s();
+        const p = lessonProgress(st.lesson, st.phase, st.segmentIndex, lineProgressRef.current);
+        if (p != null) st.setProgress(p);
       },
       onDone: (finished) => {
         s().setSpeaking(false);
@@ -117,6 +165,59 @@ export function useLessonEngine() {
     );
 
   // ------------------------------------------------------------------
+  // Whole-lesson voice preload: as soon as the plan arrives, every planned
+  // line (teacher AND each classmate's voice) is generated into the cache in
+  // the background — playback is then instant; only live doubts wait.
+  // ------------------------------------------------------------------
+  const lessonForWarmup = useLessonStore((st) => st.lesson);
+  useEffect(() => {
+    const l = lessonForWarmup;
+    if (!l) return;
+    const st = s();
+    const names = st.config?.studentNames ?? [];
+    const name = st.config?.userName ?? "dear";
+    const tv = teacherVoice();
+    const tasks = [{ lines: l.intro, opts: tv }];
+    (l.segments ?? []).forEach((seg) => {
+      tasks.push({ lines: seg.sentences, opts: tv });
+      if (seg.peerQuestion) {
+        const who = Math.min(Math.max(seg.peerQuestion.studentIndex ?? 0, 0), Math.max(0, names.length - 1));
+        tasks.push({ lines: [seg.peerQuestion.question], opts: childVoice(who) });
+        tasks.push({ lines: seg.peerQuestion.answer, opts: tv });
+      }
+    });
+    tasks.push({ lines: l.doubtSolution?.spoken ?? [], opts: tv });
+    tasks.push({ lines: l.recap, opts: tv });
+    (l.quiz ?? []).forEach((q, i) => {
+      const right = q.options?.[q.correctIndex] ?? q.answer;
+      tasks.push({
+        lines: [
+          `Quiz time! Question ${i + 1}: ${q.question}`,
+          `Good try! The right answer is: ${right}.`,
+        ],
+        opts: tv,
+      });
+    });
+    tasks.push({
+      lines: [
+        "Tick the right answer on the board!",
+        "Correct! Very well done, superstar!",
+        l.goodbye,
+        `Yes ${name}? What is your question, my dear?`,
+        "That's a wonderful question! Let me think.",
+        "Hmm, let me explain it another way!",
+        `So ${name}, is your doubt clear now?`,
+        `Wonderful, ${name}! Never be afraid to ask questions.`,
+      ],
+      opts: tv,
+    });
+    // classmate reactions in every student's own voice
+    names.forEach((_, idx) => tasks.push({ lines: CLASSMATE_REACTIONS, opts: childVoice(idx) }));
+    return warmSpeechCache(tasks);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonForWarmup]);
+
+  // ------------------------------------------------------------------
   // Phase scripts
   // ------------------------------------------------------------------
   const phase = useLessonStore((st) => st.phase);
@@ -154,6 +255,7 @@ export function useLessonEngine() {
       const seg = lesson.segments[segmentIndex];
       if (!seg) return goTo("recap");
       if (startLine === 0) st.setBoard({ title: seg.heading, lines: [] });
+      st.setBoardAnim(seg.visual ?? null); // animated concept for this segment
       st.setBoardFocus(false);
       const points = normalizePoints(seg.boardPoints, seg.sentences.length);
       speak(seg.sentences.slice(startLine), {
@@ -181,7 +283,7 @@ export function useLessonEngine() {
       const childName = names[who] ?? "A classmate";
       st.setRaisedHandStudent(who);
       speak([pq.question], {
-        ...CHILD_VOICE,
+        ...childVoice(who),
         speaker: childName,
         onDone: () => {
           s().setRaisedHandStudent(-1);
@@ -194,6 +296,7 @@ export function useLessonEngine() {
       const sol = lesson.doubtSolution;
       if (!sol?.spoken?.length) return goTo("recap");
       if (startLine === 0) st.setBoard({ title: "Let's solve your doubt! ✏️", lines: [] });
+      st.setBoardAnim(null);
       st.setBoardFocus(true);
       const per = Math.max(1, Math.ceil(sol.spoken.length / Math.max(1, sol.boardSteps.length)));
       speak(sol.spoken.slice(startLine), {
@@ -216,6 +319,7 @@ export function useLessonEngine() {
 
     if (phase === "recap") {
       if (startLine === 0) st.setBoard({ title: "What we learned today ⭐", lines: [] });
+      st.setBoardAnim(null);
       st.setBoardFocus(false);
       speak(lesson.recap.slice(startLine), {
         speaker: teacher,
@@ -225,18 +329,13 @@ export function useLessonEngine() {
     }
 
     if (phase === "quiz") {
-      const lines = [];
-      lesson.quiz.forEach((q, i) => {
-        lines.push(`Quiz time! Question ${i + 1}: ${q.question}`);
-        lines.push(`The answer is: ${q.answer}`);
-      });
-      lines.push(lesson.goodbye);
+      // Interactive quiz: each question with options becomes a tickable MCQ on
+      // the whiteboard; the child answers before the teacher reveals anything.
+      // lineProgressRef holds the QUESTION index here, so breaks/doubts resume
+      // at the same question.
       if (startLine === 0) st.setBoard({ title: "Quiz Time! 🎉", lines: [] });
-      speak(lines.slice(startLine), {
-        speaker: teacher,
-        onLineStart: track,
-        onDone: () => s().setPhase("end"),
-      });
+      st.setBoardAnim(null);
+      askQuizQuestion(startLine);
     }
 
     if (phase === "break") {
@@ -246,6 +345,7 @@ export function useLessonEngine() {
     }
 
     if (phase === "end") {
+      st.setProgress(1);
       st.setCaption("Class dismissed! Great job today. 🌟", teacher);
     }
 
@@ -255,6 +355,70 @@ export function useLessonEngine() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, segmentIndex, lesson]);
+
+  // ------------------------------------------------------------------
+  // Interactive quiz (MCQ on the whiteboard)
+  // ------------------------------------------------------------------
+  const askQuizQuestion = (i) => {
+    const st = s();
+    const teacher = st.config?.teacher?.name ?? "Teacher";
+    const quiz = st.lesson?.quiz ?? [];
+    if (i >= quiz.length) {
+      speak([st.lesson.goodbye], { speaker: teacher, onDone: () => s().setPhase("end") });
+      return;
+    }
+    lineProgressRef.current = i;
+    const q = quiz[i];
+    let options = (q.options ?? []).map((o) => String(o).trim()).filter(Boolean);
+    let correct;
+
+    if (options.length >= 2) {
+      correct = Number.isInteger(q.correctIndex) ? q.correctIndex : options.indexOf(q.answer);
+      correct = Math.min(Math.max(correct, 0), options.length - 1);
+    } else {
+      // The plan came without options (older plan / fallback provider) —
+      // synthesize choices so the teacher ALWAYS stops and waits for a tick.
+      const distractors = quiz
+        .filter((_, j) => j !== i)
+        .map((x) => String(x.answer ?? "").trim())
+        .filter((x) => x && x !== q.answer);
+      options = shuffled([q.answer, ...distractors, "Something else!"].slice(0, 3), i);
+      correct = Math.max(0, options.indexOf(q.answer));
+    }
+
+    speak([`Quiz time! Question ${i + 1}: ${q.question}`, "Tick the right answer on the board!"], {
+      speaker: teacher,
+      // the MCQ appears on the whiteboard; the teacher goes SILENT and the
+      // engine waits — nothing advances until the child actually picks
+      onDone: () => s().setMcq({ question: q.question, options, correct, picked: null, index: i }),
+    });
+  };
+
+  // React to the child ticking an option: feedback, then the next question.
+  const mcq = useLessonStore((st) => st.mcq);
+  useEffect(() => {
+    if (!mcq || mcq.picked == null) return;
+    const teacher = s().config?.teacher?.name ?? "Teacher";
+    const right = mcq.picked === mcq.correct;
+    const lines = right
+      ? ["Correct! Very well done, superstar!"]
+      : [`Good try! The right answer is: ${mcq.options[mcq.correct]}.`];
+    speak(lines, {
+      speaker: teacher,
+      onDone: () => {
+        s().setMcq(null);
+        if (s().phase === "quiz") askQuizQuestion(mcq.index + 1);
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mcq?.picked]);
+
+  // If an interruption (doubt/break/pause) pulls us out of the quiz, drop the
+  // open MCQ — resuming re-asks the same question cleanly.
+  useEffect(() => {
+    if (phase !== "quiz" && s().mcq) s().setMcq(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   const advanceAfterSegment = () => {
     const st = s();
@@ -382,7 +546,7 @@ export function useLessonEngine() {
             const idx = names.indexOf(classmate);
             s().setRaisedHandStudent(idx);
             speak([reaction], {
-              ...CHILD_VOICE,
+              ...childVoice(idx),
               speaker: classmate,
               onDone: () => {
                 s().setRaisedHandStudent(-1);

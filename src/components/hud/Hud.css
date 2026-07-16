@@ -1,9 +1,17 @@
+/* ============ Sparsh Mukthi design system — in-class HUD ============
+   Same language as the landing page & dashboard: charcoal ink (#0F172A),
+   vermillion accent (#FF6B00), Inter Tight, glass panels, soft shadows. */
+
 .hud {
+  --ink: #0f172a;
+  --accent: #ff6b00;
+  --glass-dark: rgba(15, 23, 42, 0.82);
+  --line: rgba(15, 23, 42, 0.1);
   position: fixed;
   inset: 0;
   pointer-events: none; /* let camera controls receive mouse events */
-  font-family: "Segoe UI", "Comic Sans MS", sans-serif;
-  z-index: 20;
+  font-family: "Inter Tight", "Segoe UI", sans-serif;
+  z-index: 45; /* above the interactive whiteboard overlay (40): captions + controls stay visible */
 }
 
 .hud button,
@@ -20,29 +28,35 @@
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  background: rgba(20, 30, 60, 0.72);
+  background: var(--glass-dark);
   color: #fff;
-  padding: 8px 18px;
+  padding: 9px 20px;
   border-radius: 999px;
-  backdrop-filter: blur(6px);
-  font-size: 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   white-space: nowrap;
+  box-shadow: 0 14px 34px -14px rgba(15, 23, 42, 0.55);
 }
 
 .hud-chip {
-  background: #ffd166;
-  color: #4a3200;
+  background: var(--accent);
+  color: #fff;
   font-weight: 700;
   border-radius: 999px;
-  padding: 3px 12px;
-  font-size: 0.85rem;
+  padding: 4px 13px;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .hud-timer {
   font-variant-numeric: tabular-nums;
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 /* ---- captions ---- */
@@ -52,24 +66,25 @@
   left: 50%;
   transform: translateX(-50%);
   max-width: min(760px, 86vw);
-  background: rgba(15, 22, 45, 0.82);
+  background: var(--glass-dark);
   color: #fff;
-  padding: 14px 22px;
-  border-radius: 18px;
-  font-size: 1.15rem;
-  line-height: 1.45;
+  padding: 15px 24px;
+  border-radius: 20px;
+  font-size: 1.12rem;
+  font-weight: 500;
+  line-height: 1.5;
   text-align: center;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(10px);
 }
 
 .hud-speaker {
   display: block;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #ffd166;
-  margin-bottom: 2px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 3px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.18em;
 }
 
 /* ---- side controls ---- */
@@ -84,57 +99,71 @@
 }
 
 .hud-btn {
-  border: none;
+  border: 1px solid var(--line);
   border-radius: 14px;
   padding: 12px 16px;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.92);
-  color: #22335c;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-  transition: transform 0.12s;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--ink);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px -6px rgba(15, 23, 42, 0.28);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s, background 0.2s, color 0.2s;
 }
 
 .hud-btn:hover:not(:disabled) {
-  transform: scale(1.05);
+  transform: translateY(-2px) scale(1.03);
 }
 
 .hud-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .hud-btn.raise {
-  background: #ffd166;
-  font-size: 1.1rem;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-size: 1rem;
 }
 
 .hud-btn.cam.on {
-  background: #2fb36b;
+  background: #16a34a;
+  border-color: #16a34a;
   color: #fff;
 }
 
 .hud-btn.primary {
-  background: #4f7cff;
+  background: var(--ink);
+  border-color: var(--ink);
   color: #fff;
 }
 
+.hud-btn.primary:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
 .hud-btn.mic.on {
-  background: #e5533a;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 
 .hud-btn.exit {
-  background: rgba(255, 255, 255, 0.75);
-  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  color: rgba(15, 23, 42, 0.7);
 }
 
 /* ---- doubt modal ---- */
 .hud-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(10, 15, 35, 0.45);
+  background: rgba(15, 23, 42, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -143,25 +172,38 @@
 
 .hud-modal {
   background: #fff;
-  border-radius: 22px;
-  padding: 26px 30px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 28px 32px;
   width: min(520px, 90vw);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 30px 80px -20px rgba(15, 23, 42, 0.45);
 }
 
 .hud-modal h2 {
-  margin: 0 0 14px;
-  color: #22335c;
+  margin: 0 0 16px;
+  color: var(--ink);
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .hud-modal input {
   width: 100%;
   box-sizing: border-box;
-  padding: 12px 16px;
-  font-size: 1.05rem;
-  border: 2px solid #d5ddef;
-  border-radius: 12px;
+  padding: 13px 16px;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 14px;
   margin-bottom: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hud-modal input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.12);
 }
 
 .hud-modal-row {
@@ -174,7 +216,8 @@
 .hud-break {
   position: absolute;
   inset: 0;
-  background: linear-gradient(160deg, rgba(30, 45, 90, 0.92), rgba(60, 30, 90, 0.92));
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -183,33 +226,49 @@
 
 .hud-break-card {
   text-align: center;
-  color: #fff;
-  max-width: 480px;
-  padding: 20px;
+  color: var(--ink);
+  max-width: 520px;
+  padding: 24px;
 }
 
 .hud-break-card h1 {
-  font-size: 2.4rem;
-  margin-bottom: 8px;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  margin-bottom: 10px;
+}
+
+.hud-break-card p {
+  color: rgba(15, 23, 42, 0.6);
+  font-weight: 500;
+  font-size: 1.02rem;
+  line-height: 1.6;
 }
 
 .hud-break-timer {
-  font-size: 3.4rem;
-  font-weight: 800;
+  font-size: 3.6rem;
+  font-weight: 900;
   font-variant-numeric: tabular-nums;
-  margin: 18px 0;
-  color: #ffd166;
+  letter-spacing: -0.02em;
+  margin: 20px 0;
+  color: var(--accent);
 }
 
 .hud-btn.immersive {
-  background: linear-gradient(135deg, #5b4dff, #a04dd5);
+  background: var(--ink);
+  border-color: var(--ink);
   color: #fff;
-  font-size: 1.02rem;
+  font-size: 0.98rem;
+}
+
+.hud-btn.immersive:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .hud-btn.big {
-  font-size: 1.15rem;
-  padding: 14px 22px;
+  font-size: 1.08rem;
+  padding: 15px 24px;
 }
 
 .hud-modal-row.center {
@@ -220,19 +279,11 @@
   text-align: center;
 }
 
-/* ---- polish pass ---- */
-.hud-top,
-.hud-caption,
-.hud-btn,
-.hud-modal,
-.hud-break-card {
-  font-family: "Nunito", "Segoe UI", sans-serif;
-}
-
+/* ---- motion polish ---- */
 .hud-caption {
   animation: capIn 0.3s ease both;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 34px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px -14px rgba(15, 23, 42, 0.55);
 }
 
 @keyframes capIn {
@@ -240,25 +291,45 @@
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
-.hud-btn { transition: transform 0.16s, box-shadow 0.16s, filter 0.16s; }
-.hud-btn:hover:not(:disabled) { box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28); }
-
 .hud-btn.raise { animation: askPulse 2.6s ease-in-out infinite; }
 
 @keyframes askPulse {
-  0%, 100% { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18); }
-  50% { box-shadow: 0 4px 22px rgba(255, 209, 102, 0.75); }
+  0%, 100% { box-shadow: 0 6px 18px -6px rgba(15, 23, 42, 0.28); }
+  50% { box-shadow: 0 6px 26px -2px rgba(255, 107, 0, 0.6); }
 }
 
-.hud-modal { animation: modalIn 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.hud-modal { animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
 @keyframes modalIn {
   from { opacity: 0; transform: translateY(18px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.hud-modal-backdrop { animation: fadeIn 0.25s ease both; backdrop-filter: blur(3px); }
+.hud-modal-backdrop { animation: fadeIn 0.25s ease both; backdrop-filter: blur(4px); }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .hud-break { animation: fadeIn 0.35s ease both; }
+
+/* lesson progress percent (replaces the wall-clock timer) */
+.hud-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+.hud-progress-bar {
+  width: 84px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+  display: inline-block;
+}
+.hud-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffd166, #ff6b00);
+  transition: width 0.6s ease;
+}

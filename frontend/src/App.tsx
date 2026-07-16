@@ -8,7 +8,7 @@ import SecuritySection from "./components/SecuritySection";
 import StoryCardShowcase from "./components/StoryCardShowcase";
 import SexyFooter from "./components/SexyFooter";
 import LoadingScreen from "./components/LoadingScreen";
-import DentalClinic from "./components/DentalClinic";
+import ClassroomJourney from "./components/ClassroomJourney";
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -38,8 +38,8 @@ export default function App() {
         {/* Section 6: Visual Simulation 3D Card (Tilt carousel - replacing pricing plans) */}
         <StoryCardShowcase />
 
-        {/* Section 7: Dental Clinic flow sections */}
-        <DentalClinic />
+        {/* Section 7: Classroom journey flow sections */}
+        <ClassroomJourney />
 
         {/* Section 8: Fullscreen 100vh Footer */}
         <SexyFooter />

@@ -19,7 +19,7 @@ const GESTURE_PITCH_RANGE = 1.0;
 export function FPVCamera() {
   const { camera, gl } = useThree();
   const mouse = useRef({ yaw: 0, pitch: 0, dragging: false, lastX: 0, lastY: 0 });
-  const smooth = useRef({ yaw: null, pitch: null, gYaw: 0, gPitch: 0, fov: BASE_FOV });
+  const smooth = useRef({ yaw: null, pitch: null, gYaw: 0, gPitch: 0, fov: BASE_FOV, zoom: 0 });
 
   // mouse-drag look + wheel zoom (parallel to gestures)
   useEffect(() => {
@@ -66,11 +66,19 @@ export function FPVCamera() {
     const st = useLessonStore.getState();
     const k = 1 - Math.exp(-delta * 4); // smoothing
 
-    // zoom amount first — zooming always aims at the whiteboard
-    let zoomK = mouse.current.wheelZoom ?? 0;
-    if (gestureState.enabled && gestureState.pinching) {
-      zoomK = Math.max(zoomK, THREE.MathUtils.clamp((0.42 - gestureState.pinch) / 0.3, 0, 1));
+    // zoom amount first — zooming always aims at the whiteboard.
+    // 🙌 two-hand gesture sets zoomK (spread apart = in, together = out) and
+    // it STAYS where you leave it, like a real zoom level.
+    let zoomT = mouse.current.wheelZoom ?? 0;
+    if (gestureState.enabled) {
+      zoomT = Math.max(zoomT, gestureState.zoomK);
     }
+    // smooth + deadband the zoom itself: slight hand movement while pinching
+    // must never make the dolly jitter
+    if (Math.abs(zoomT - smooth.current.zoom) > 0.01) {
+      smooth.current.zoom += (zoomT - smooth.current.zoom) * k;
+    }
+    const zoomK = smooth.current.zoom;
 
     // where the lesson wants you to look by default
     const lessonTarget = st.boardFocus || st.phase === "whiteboard" ? BOARD : TEACHER_HEAD;

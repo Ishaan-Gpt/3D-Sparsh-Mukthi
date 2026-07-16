@@ -10,7 +10,9 @@ body,
 }
 
 body {
-  font-family: "Roboto", sans-serif;
+  font-family: "Inter Tight", "Segoe UI", sans-serif;
+  background: #ffffff;
+  color: #0f172a;
   display: flex;
   justify-content: center;
   align-items: center;

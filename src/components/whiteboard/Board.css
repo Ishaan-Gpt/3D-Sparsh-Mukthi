@@ -1,0 +1,146 @@
+/* Interactive whiteboard overlay (Excalidraw) */
+.board-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40; /* above the 3D canvas, below gesture cursor/panel */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 16, 28, 0.45);
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+}
+
+.board-frame {
+  width: min(1120px, 94vw);
+  height: min(720px, 88vh);
+  display: flex;
+  flex-direction: column;
+  background: #f7f9f4;
+  border: 6px solid #8a6844;
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #23402f;
+  color: #f2f7ee;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.board-close {
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: #f2f7ee;
+  color: #23402f;
+  font-weight: 700;
+  cursor: pointer;
+}
+.board-close:hover {
+  background: #ffd166;
+}
+
+.board-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.board-loading,
+.board-simple {
+  height: 100%;
+  padding: 28px 40px;
+  overflow-y: auto;
+  color: #22301f;
+}
+.board-loading {
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  color: #667;
+}
+.board-simple h2 {
+  color: #20406b;
+  border-bottom: 3px solid #20406b;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  font-family: "Comic Sans MS", "Segoe UI", sans-serif;
+}
+.board-simple p {
+  font-size: 20px;
+  margin: 10px 0;
+  font-family: "Comic Sans MS", "Segoe UI", sans-serif;
+}
+.board-simple-q {
+  color: #7b2d8b;
+  font-weight: 700;
+}
+
+/* MCQ answer bar */
+.board-mcq-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #eef3e7;
+  border-top: 2px solid #cdd8c2;
+}
+.board-mcq-label {
+  font-weight: 800;
+  color: #23402f;
+  margin-right: 4px;
+}
+.board-mcq-btn {
+  border: 2px solid #4a5568;
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a2233;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.board-mcq-btn:hover:enabled {
+  transform: translateY(-2px);
+  background: #fff4d6;
+}
+.board-mcq-btn.right {
+  background: #b9f6c3;
+  border-color: #0a7d2c;
+}
+.board-mcq-btn.wrong {
+  background: #ffd2d2;
+  border-color: #c0392b;
+}
+.board-mcq-btn.dim {
+  opacity: 0.55;
+}
+
+/* header read-only / editable badge */
+.board-mode {
+  margin-left: auto;
+  margin-right: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+/* Remotion "concept in motion" strip */
+.board-anim {
+  border-bottom: 2px solid #cdd8c2;
+  background: #fffdf5;
+  line-height: 0;
+}

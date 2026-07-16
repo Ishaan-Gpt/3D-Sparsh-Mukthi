@@ -14,6 +14,25 @@ No mockups — every layer is functional.
 - `public/models/emilian.glb` — same rig (used for classmate clones via `SkeletonUtils.clone`).
 - `proxy-server/.env` — `GEMINI_API_KEY` (live, primary), plus `CLAUDE_API_KEY` / `OPENAI_API_KEY`
   fallbacks. Provider order: Gemini (`gemini-3-flash-preview` → `gemini-3.1-flash-lite`) → Claude → OpenAI.
+- Optional `ORPHEUS_TTS_URL` in `proxy-server/.env` — points at an Orpheus TTS server
+  (`orpheus-server/`, OpenAI-compatible `/v1/audio/speech`). TTS order: Orpheus (unique human voice
+  per teacher AND per classmate, see `orpheusVoice` in `src/data/curriculum.js`) → Gemini TTS →
+  browser speechSynthesis. Orpheus failures back off 60s and fall through automatically.
+- "My Whiteboard": AI-designed notebook (`src/components/whiteboard/ExcalidrawBoard.jsx`, Excalidraw).
+  The TEACHER controls the canvas — every finished page (intro, segments, doubts, recap) is archived
+  in `boardPages` and laid out with banners/bullets/step chips, streaming live with speech. The child
+  view is READ-ONLY; drawing unlocks only during quiz MCQs (schema `options`/`correctIndex`), and the
+  engine waits until an option is ticked. A Remotion `@remotion/player` strip
+  (`ConceptPlayer.jsx` + `animations.jsx`; schema field `visual: {kind, items, caption}`) plays an
+  animated concept per segment. Current page mirrors onto the 3D plane via `src/lib/boardBridge.js`;
+  every layer degrades gracefully (no Excalidraw → HTML notes; no Remotion → just no strip).
+- Solar "eye" mode: 👁 button in the solar HUD swaps the space background for the child's mirrored
+  webcam feed (`src/components/solar/EyeBackground.jsx`, transparent canvas) so planets float in the
+  room and are touched via the existing gestures.
+- Gestures: zoom is TWO-HANDED (spread both index tips apart = in, together = out; `zoomK`/`zoomVel`
+  in `src/lib/gestureState.js`); ☝️ cursor with deadzone + adaptive easing; ✌️ click; ✋ 3s raise.
+  `tools/virtual-mouse/virtual_mouse.py` is an optional companion that drives the REAL Windows
+  cursor with the same gestures (browsers cannot move the OS pointer).
 
 ## 2. Architecture (user-oriented)
 

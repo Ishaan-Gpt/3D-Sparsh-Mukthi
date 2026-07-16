@@ -32,16 +32,16 @@ export default function AIIntelligence() {
   const [qIdx, setQIdx] = useState(0);
   const questions = [
     {
-      q: "Can I afford to invest $500 this month?",
-      a: "Based on your current income and expenses, you’ll have around $620 in available balance after bills. Investing $500 is within reach - but consider saving at least $200 as an emergency buffer.",
+      q: "Teacher, why does the moon change shape every night?",
+      a: "Great question! The moon doesn't really change shape — sunlight lights up different parts of it as it travels around Earth. Let me draw the phases on the whiteboard so you can see each one, step by step.",
     },
     {
-      q: "When will I reach my savings goal?",
-      a: "At your current savings rate of $850/month, you’ll reach your $10,000 goal in approximately 8 months. Cutting discretionary spending by 15% could shave off 3 weeks.",
+      q: "How do fish breathe underwater without a nose?",
+      a: "Fish have a superpower called gills! Water flows over tiny gill curtains behind their cheeks, and the gills pull out the oxygen hiding inside the water. Watch the board — I'll show you how the water flows through.",
     },
     {
-      q: "How much did I spend on food last month?",
-      a: "You spent $643 on food in March - $421 on groceries and $222 on dining out. That’s 18% above your monthly food budget of $545.",
+      q: "What is 7 × 8? I always forget this one!",
+      a: "Don't worry, lots of children find this one tricky! Think of it as 7 × 8 = 56. Here's a fun trick: 5, 6, 7, 8 — fifty-six equals seven times eight! Let's solve it together on the board.",
     },
   ];
 
@@ -146,9 +146,9 @@ export default function AIIntelligence() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-4xl md:text-5xl font-heading font-extrabold text-charcoalText tracking-tight leading-tight"
         >
-          Your personal{" "}
+          A teacher who{" "}
           <span className="font-serif-italic font-normal text-vermillion block sm:inline">
-            AI advisor
+            truly listens
           </span>
         </motion.h2>
 
@@ -159,7 +159,7 @@ export default function AIIntelligence() {
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
           className="text-charcoalText/75 text-sm mt-4 font-heading font-medium leading-relaxed"
         >
-          Experience the power of artificial intelligence working for your financial well-being.
+          Every lesson is planned live by AI — structured segments, peer questions, and step-by-step whiteboard answers to your child&apos;s own doubts.
         </motion.p>
       </div>
 
@@ -181,7 +181,7 @@ export default function AIIntelligence() {
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             {/* Fine Light Gradient Backdrop Mask */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/50 to-white/95" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/40 to-white/95 transition-opacity duration-700" />
           </div>
 
           {/* Glass UI Card */}
@@ -249,10 +249,10 @@ export default function AIIntelligence() {
           {/* Aligned Title Block at the bottom */}
           <div className="absolute bottom-7 left-6 right-6 z-10 text-charcoalText">
             <h3 className="font-serif-italic text-2xl mb-2 font-medium">
-              Natural Language Queries
+              Ask Any Doubt, Live
             </h3>
             <p className="text-xs text-charcoalText/75 font-heading font-medium leading-relaxed">
-              Ask questions about your finances in plain English and get instant, accurate answers.
+              Raise a hand, hold to speak, or type — the teacher pauses the class and answers in child-friendly words.
             </p>
           </div>
         </motion.div>
@@ -272,17 +272,17 @@ export default function AIIntelligence() {
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             {/* Fine Light Gradient Backdrop Mask */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/50 to-white/95" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/40 to-white/95 transition-opacity duration-700" />
           </div>
 
           {/* White rounded board */}
           <div className="absolute top-8 left-6 right-6 z-10 bg-white border border-black/5 rounded-[20px] p-6 shadow-xl text-center flex flex-col items-center">
             
             <span className="text-[11px] font-bold text-charcoalText/50 uppercase tracking-widest mb-1">
-              Expenses expected to rise
+              Attention score this week
             </span>
             <span className="font-serif-italic text-[52px] leading-none text-charcoalText font-normal mb-4">
-              3%
+              98%
             </span>
 
             {/* SVG Chart Container */}
@@ -357,17 +357,17 @@ export default function AIIntelligence() {
 
             {/* Tip pill */}
             <div className="border border-black/10 bg-black/5 rounded-full px-4 py-2 mt-4 text-[10px] text-charcoalText/60 font-semibold max-w-[240px] leading-tight">
-              Tip: Reduce subscriptions to maintain savings target.
+              Tip: A short stretch break every 10 minutes keeps young eyes fresh.
             </div>
           </div>
 
           {/* Aligned Title Block */}
           <div className="absolute bottom-7 left-6 right-6 z-10 text-charcoalText">
             <h3 className="font-serif-italic text-2xl mb-2 font-medium">
-              Predictive Analysis
+              Attention-Aware Pacing
             </h3>
             <p className="text-xs text-charcoalText/75 font-heading font-medium leading-relaxed">
-              AI algorithms analyze patterns to forecast future expenses and income trends.
+              The lesson is paced by real speech — the teacher waits, repeats, and schedules eye-rest breaks automatically.
             </p>
           </div>
         </motion.div>
@@ -387,7 +387,7 @@ export default function AIIntelligence() {
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             {/* Fine Light Gradient Backdrop Mask */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/50 to-white/95" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/40 to-white/95 transition-opacity duration-700" />
           </div>
 
           {/* Node Tree Box */}
@@ -445,37 +445,37 @@ export default function AIIntelligence() {
             {/* Tree Nodes List */}
             {/* Row 1: Root */}
             <div ref={nodesRefs.root} className="z-20 border border-black/10 bg-white/60 backdrop-blur-md px-4 py-2 rounded-full font-serif-italic text-sm text-charcoalText font-bold shadow-md cursor-pointer hover:border-vermillion transition-all">
-              Categorization
+              Today&apos;s Lesson
             </div>
 
             {/* Row 2: Sub-Groups */}
             <div className="w-full flex justify-between px-6 z-20">
               <div ref={nodesRefs.transport} className="border border-black/10 bg-white/60 backdrop-blur-md px-4 py-2 rounded-full font-serif-italic text-xs text-charcoalText font-bold shadow-md cursor-pointer hover:border-vermillion transition-all">
-                Transportation
+                Teaching
               </div>
               <div ref={nodesRefs.entertainment} className="border border-black/10 bg-white/60 backdrop-blur-md px-4 py-2 rounded-full font-serif-italic text-xs text-charcoalText font-bold shadow-md cursor-pointer hover:border-vermillion transition-all">
-                Entertainment
+                Peer Questions
               </div>
             </div>
 
             {/* Row 3: Description Cards */}
             <div className="w-full flex justify-between px-2 z-20">
               <div ref={nodesRefs.transportDetail} className="bg-white border border-black/5 p-3 rounded-xl shadow-lg text-[10px] text-charcoalText/75 font-heading font-medium tracking-wide max-w-[110px] leading-relaxed">
-                Fuel, rides, car maintenance
+                Segments with board bullets
               </div>
               <div ref={nodesRefs.entertainmentDetail} className="bg-white border border-black/5 p-3 rounded-xl shadow-lg text-[10px] text-charcoalText/75 font-heading font-medium tracking-wide max-w-[110px] leading-relaxed">
-                Streaming services, events
+                Classmates ask &amp; react
               </div>
             </div>
 
             {/* Row 4: Bills */}
             <div ref={nodesRefs.bills} className="z-20 border border-black/10 bg-white/60 backdrop-blur-md px-4 py-2 rounded-full font-serif-italic text-xs text-charcoalText font-bold shadow-md cursor-pointer hover:border-vermillion transition-all">
-              Bills and Utilities
+              Whiteboard Solving
             </div>
 
             {/* Row 5: Bills Detail */}
             <div ref={nodesRefs.billsDetail} className="z-20 bg-white border border-black/5 p-3 rounded-xl shadow-lg text-[10px] text-charcoalText/75 font-heading font-medium tracking-wide max-w-[140px] leading-relaxed text-center">
-              Electricity, water, gas, phone
+              Your child&apos;s own doubt, solved step-by-step
             </div>
 
           </div>
@@ -483,10 +483,10 @@ export default function AIIntelligence() {
           {/* Aligned Title Block */}
           <div className="absolute bottom-7 left-6 right-6 z-10 text-charcoalText">
             <h3 className="font-serif-italic text-2xl mb-2 font-medium">
-              Smart Categorization
+              Structured Lesson Plans
             </h3>
             <p className="text-xs text-charcoalText/75 font-heading font-medium leading-relaxed">
-              Automatically categorize transactions with machine learning that improves over time.
+              AI drafts the full lesson — intro, segments, peer questions and recap — before class even begins.
             </p>
           </div>
         </motion.div>

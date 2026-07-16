@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 
-// --- IMAGE URLS ---
-const HERO_IMAGE = "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260624_113640_ccf3cf97-d447-425b-a134-d7b09fc743fc.png&w=1280&q=85";
-const SECTION2_IMAGE = "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260624_114219_414dfe80-f15c-4e25-bf52-b13721f4bd88.png&w=1280&q=85";
-const SECTION3_IMG1 = "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260624_115253_c19ab167-8dd5-48b4-967d-b9f0d9d6e8fb.png&w=1280&q=85";
-const SECTION3_IMG2 = "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260624_115237_fc519057-6e87-4abf-999a-9610b8b085b4.png&w=1280&q=85";
-const SECTION3_BG = "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260624_114355_752ba9e6-0942-4abb-9047-5d9bb16632e9.png&w=1280&q=85";
+// --- IMAGE URLS (all local, bundled with the site) ---
+const HERO_IMAGE = "/hero_base.png";
+const SECTION2_IMAGE = "/theme_space.png";
+const SECTION3_IMG1 = "/theme_ocean.png";
+const SECTION3_IMG2 = "/theme_dinosaur.png";
+const SECTION3_BG = "/story_classmates.png";
 
 // --- DATA CONSTANTS ---
-const featureBars = ["Advanced Dentistry", "High Quality Equipment", "Friendly Staff"];
-const services = [
-  { name: "Dental\nVeneers", num: "01", active: true },
-  { name: "Dental\nCrowns", num: "02", active: false },
-  { name: "Teeth\nWhitening", num: "03", active: false },
-  { name: "Dental\nImplants", num: null, active: false },
+const featureBars = ["Live AI Teacher", "Gesture Controls", "Guided Study Breaks"];
+const lessonFlow = [
+  { name: "Warm\nIntro", num: "01", active: true },
+  { name: "Teaching\nSegments", num: "02", active: false },
+  { name: "Peer\nQuestions", num: "03", active: false },
+  { name: "Whiteboard\nSolving", num: null, active: false },
 ];
 
 // --- CUSTOM HOOKS ---
@@ -169,8 +169,8 @@ function MaskedCard({
   );
 }
 
-// --- MAIN DENTAL CLINIC COMPONENT ---
-export default function DentalClinic() {
+// --- MAIN CLASSROOM JOURNEY COMPONENT ---
+export default function ClassroomJourney() {
   const isMobile = useIsMobile();
 
   // --- SECTION 1 HOOKS ---
@@ -211,9 +211,9 @@ export default function DentalClinic() {
   const s2FocalX = isMobile ? 0.65 : 0.8;
 
   return (
-    <div className="bg-white text-black font-sans select-none" style={{ fontFamily: "'Open Sauce One', sans-serif" }}>
-      
-      {/* ================= SECTION 1: HERO ================= */}
+    <div className="bg-white text-charcoalText font-heading select-none">
+
+      {/* ================= SECTION 1: CLASSROOM HERO ================= */}
       <section
         ref={(el) => {
           s1ContainerRef.current = el;
@@ -233,12 +233,12 @@ export default function DentalClinic() {
             position={s1Positions[i]}
             imageWidth={s1ImageWidth}
             focalX={s1FocalX}
-            className="w-full h-14 md:h-20 shrink-0 rounded-xl md:rounded-2xl overflow-hidden relative"
+            className="w-full h-14 md:h-20 shrink-0 rounded-xl md:rounded-2xl overflow-hidden relative group"
             style={s1Reveal.getAnimStyle(i)}
           >
-            {/* Dark semi-opaque overlay inside visual card */}
-            <div className="absolute inset-0 bg-white/20 backdrop-blur-sm z-0" />
-            <span className="flex items-center justify-center h-full text-black text-lg md:text-3xl font-bold text-center relative z-10">
+            {/* Frosted strip lifts on hover to reveal the full-colour image */}
+            <div className="absolute inset-0 bg-white/40 backdrop-blur-sm z-0 transition-opacity duration-500 group-hover:opacity-0" />
+            <span className="flex items-center justify-center h-full text-charcoalText text-lg md:text-3xl font-bold text-center relative z-10 tracking-tight [text-shadow:0_1px_12px_rgba(255,255,255,0.85)]">
               {bar}
             </span>
           </MaskedCard>
@@ -256,32 +256,32 @@ export default function DentalClinic() {
           className="w-full flex-1 min-h-0 rounded-xl md:rounded-2xl overflow-hidden relative"
           style={s1Reveal.getAnimStyle(3)}
         >
-          {/* Overlay to support readability */}
-          <div className="absolute inset-0 bg-black/10 z-0" />
+          {/* Soft bottom scrim for headline legibility only */}
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/45 to-transparent z-0" />
 
           {/* Top Left Description */}
-          <p className="absolute top-4 left-4 md:top-7 md:left-7 text-black text-xs md:text-sm font-semibold leading-4 md:leading-5 max-w-[200px] md:max-w-[300px] z-10 text-left">
-            We wish to provide professional dental services that match the current technologies
+          <p className="absolute top-4 left-4 md:top-7 md:left-7 bg-white/70 backdrop-blur-md rounded-xl px-4 py-3 text-charcoalText text-xs md:text-sm font-semibold leading-4 md:leading-5 max-w-[220px] md:max-w-[320px] z-10 text-left shadow-md">
+            A real 3D classroom rendered in your browser — the AI teacher plans, speaks, and paces every lesson live.
           </p>
 
           {/* Bottom Left Branding */}
           <div className="absolute bottom-5 left-3 md:bottom-8 md:left-4 z-10 text-left">
-            <span className="block text-black text-xs md:text-sm font-semibold mb-1 md:mb-2">
-              Trusted Dentist in West New York
+            <span className="block text-white text-xs md:text-sm font-semibold mb-1 md:mb-2 tracking-wide">
+              Desktop VR for Classes 1–4
             </span>
-            <h1 className="text-black text-[clamp(2.5rem,10vw,10rem)] font-bold leading-[0.79] tracking-tight">
-              Dental<br />Care
+            <h1 className="text-white text-[clamp(2.5rem,10vw,10rem)] font-bold leading-[0.79] tracking-tight">
+              Virtual<br />Classroom
             </h1>
           </div>
 
           {/* Bottom Right Label */}
-          <span className="absolute bottom-6 right-4 md:bottom-10 md:right-8 text-white text-xs md:text-sm font-semibold z-10">
-            Free Consultation
+          <span className="absolute bottom-6 right-4 md:bottom-10 md:right-8 text-white text-xs md:text-sm font-semibold z-10 tracking-wide">
+            No Headset Needed
           </span>
         </MaskedCard>
       </section>
 
-      {/* ================= SECTION 2: SMILE GALLERY ================= */}
+      {/* ================= SECTION 2: LESSON GALLERY ================= */}
       <section
         ref={(el) => {
           s2ContainerRef.current = el;
@@ -291,8 +291,8 @@ export default function DentalClinic() {
         style={{ minHeight: isMobile ? "auto" : "100dvh" }}
       >
         <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 grid-rows-[auto_auto_auto_auto] md:grid-rows-[1fr_1fr_0.8fr] gap-1.5 md:gap-2">
-          
-          {/* Card 0: Top Left Smile Gallery */}
+
+          {/* Card 0: Top Left Lesson Gallery */}
           <MaskedCard
             cardRef={(el) => {
               s2CardRefs.current[0] = el;
@@ -304,12 +304,12 @@ export default function DentalClinic() {
             className="rounded-xl md:rounded-2xl overflow-hidden relative min-h-[160px] md:min-h-0"
             style={s2Reveal.getAnimStyle(0)}
           >
-            <div className="absolute inset-0 bg-black/15 z-0" />
-            <h3 className="absolute top-4 left-5 md:top-6 md:left-7 text-white md:text-black text-2xl md:text-3xl font-bold z-10 text-left">
-              Smile Gallery
+            <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/35 z-0" />
+            <h3 className="absolute top-4 left-5 md:top-6 md:left-7 text-white text-2xl md:text-3xl font-bold z-10 text-left tracking-tight">
+              Lesson Gallery
             </h3>
-            <span className="absolute bottom-4 left-5 md:bottom-6 md:left-7 text-white md:text-black text-xs md:text-sm font-semibold z-10 text-left">
-              Our cosmetic dental work
+            <span className="absolute bottom-4 left-5 md:bottom-6 md:left-7 text-white text-xs md:text-sm font-semibold z-10 text-left">
+              Every topic becomes a world
             </span>
           </MaskedCard>
 
@@ -325,16 +325,19 @@ export default function DentalClinic() {
             className="md:row-span-2 rounded-xl md:rounded-2xl overflow-hidden relative min-h-[220px] md:min-h-0"
             style={s2Reveal.getAnimStyle(1)}
           >
-            <div className="absolute inset-0 bg-black/10 z-0" />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent z-0" />
             <p className="absolute bottom-16 left-5 md:bottom-20 md:left-7 text-white text-xs md:text-sm font-semibold leading-4 md:leading-5 z-10 text-left">
-              If you want a gorgeous smile,<br />call us to ask about a smile makeover.
+              Raise your hand and the whole class waits —<br />your doubt is answered on the whiteboard.
             </p>
-            <button className="absolute bottom-4 right-4 md:bottom-6 md:right-6 px-6 py-2.5 md:px-8 md:py-4 bg-white rounded-full text-black text-sm md:text-base font-bold z-10 hover:scale-105 active:scale-95 transition-transform duration-200 shadow-md">
-              Call Us
-            </button>
+            <a
+              href="http://localhost:5174/"
+              className="absolute bottom-4 right-4 md:bottom-6 md:right-6 px-6 py-2.5 md:px-8 md:py-4 bg-white rounded-full text-charcoalText text-sm md:text-base font-bold z-10 hover:bg-vermillion hover:text-white hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
+            >
+              Enter Class
+            </a>
           </MaskedCard>
 
-          {/* Card 2: Bottom Left Smile Makeover */}
+          {/* Card 2: Bottom Left Doubt Solving */}
           <MaskedCard
             cardRef={(el) => {
               s2CardRefs.current[2] = el;
@@ -346,13 +349,13 @@ export default function DentalClinic() {
             className="rounded-xl md:rounded-2xl overflow-hidden relative min-h-[160px] md:min-h-0"
             style={s2Reveal.getAnimStyle(2)}
           >
-            <div className="absolute inset-0 bg-black/15 z-0" />
-            <h2 className="absolute top-4 left-5 md:top-6 md:left-7 text-white md:text-black text-[clamp(2.5rem,6vw,5.5rem)] font-bold leading-[0.9] z-10 text-left">
-              Smile<br />makeover
+            <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-0" />
+            <h2 className="absolute top-4 left-5 md:top-6 md:left-7 text-white text-[clamp(2.5rem,6vw,5.5rem)] font-bold leading-[0.9] z-10 text-left tracking-tight">
+              Doubts<br />solved live
             </h2>
           </MaskedCard>
 
-          {/* Card 3: Bottom Full Width Services Row */}
+          {/* Card 3: Bottom Full Width Lesson Flow Row */}
           <MaskedCard
             cardRef={(el) => {
               s2CardRefs.current[3] = el;
@@ -364,31 +367,30 @@ export default function DentalClinic() {
             className="col-span-1 md:col-span-2 rounded-xl md:rounded-2xl overflow-hidden relative min-h-[200px] md:min-h-0 p-3"
             style={s2Reveal.getAnimStyle(3)}
           >
-            <div className="absolute inset-0 bg-black/5 z-0" />
             <div className="absolute inset-0 z-10 flex flex-col md:flex-row gap-1.5 md:gap-2 p-2 md:p-3">
-              {services.map((svc, idx) => (
+              {lessonFlow.map((step, idx) => (
                 <div
                   key={idx}
-                  className={`flex-1 rounded-xl md:rounded-2xl p-4 md:p-5 flex flex-col justify-between text-left transition-all duration-300 ${
-                    svc.active
+                  className={`flex-1 rounded-xl md:rounded-2xl p-4 md:p-5 flex flex-col justify-between text-left transition-all duration-300 hover:-translate-y-0.5 ${
+                    step.active
                       ? "bg-white/90 backdrop-blur-md shadow-lg"
-                      : "bg-white/20 backdrop-blur-xl border border-white/10"
+                      : "bg-black/25 backdrop-blur-xl border border-white/15 hover:bg-black/35"
                   }`}
                 >
                   <h4
-                    className={`text-lg md:text-2xl font-bold leading-[1.05] whitespace-pre-line ${
-                      svc.active ? "text-black" : "text-white"
+                    className={`text-lg md:text-2xl font-bold leading-[1.05] whitespace-pre-line tracking-tight ${
+                      step.active ? "text-charcoalText" : "text-white"
                     }`}
                   >
-                    {svc.name}
+                    {step.name}
                   </h4>
-                  {svc.num && (
+                  {step.num && (
                     <span
                       className={`self-end w-8 h-8 md:w-10 md:h-10 rounded-full border flex items-center justify-center text-xs font-semibold ${
-                        svc.active ? "border-black text-black" : "border-white text-white"
+                        step.active ? "border-charcoalText text-charcoalText" : "border-white text-white"
                       }`}
                     >
-                      {svc.num}
+                      {step.num}
                     </span>
                   )}
                 </div>
@@ -399,27 +401,27 @@ export default function DentalClinic() {
         </div>
       </section>
 
-      {/* ================= SECTION 3: IMPLANT DENTISTRY ================= */}
+      {/* ================= SECTION 3: IMMERSIVE STUDY ================= */}
       <section
         ref={s3Reveal.containerRef}
         className="min-h-screen md:h-screen w-full overflow-hidden flex flex-col pt-1.5 md:pt-2 px-3 md:px-5 pb-1.5 md:pb-2 gap-1.5 md:gap-2 bg-white"
         style={{ minHeight: isMobile ? "auto" : "100dvh" }}
       >
         <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-1.5 md:gap-2">
-          
+
           {/* Left Column blocks */}
           <div className="flex flex-col gap-1.5 md:gap-2">
-            
+
             {/* Heading Card */}
             <div
               style={s3Reveal.getAnimStyle(0)}
-              className="rounded-xl md:rounded-2xl bg-stone-50 p-5 md:p-7 flex flex-col justify-between flex-[1.2] min-h-[180px] md:min-h-0 text-left border border-black/5"
+              className="rounded-xl md:rounded-2xl bg-white p-5 md:p-7 flex flex-col justify-between flex-[1.2] min-h-[180px] md:min-h-0 text-left border border-black/10"
             >
-              <h2 className="text-[clamp(2.5rem,6.5vw,6rem)] font-bold leading-[0.95] text-black">
-                Implant<br />Dentistry
+              <h2 className="text-[clamp(2.5rem,6.5vw,6rem)] font-bold leading-[0.95] text-charcoalText tracking-tight">
+                Immersive<br />Study
               </h2>
-              <p className="text-xs md:text-sm font-semibold text-black/60 uppercase tracking-wider">
-                Restore Missing Teeth
+              <p className="text-xs md:text-sm font-semibold text-vermillion uppercase tracking-wider">
+                Step Inside Your Lesson
               </p>
             </div>
 
@@ -428,61 +430,64 @@ export default function DentalClinic() {
               style={s3Reveal.getAnimStyle(1)}
               className="flex gap-1.5 md:gap-2 flex-1 min-h-[140px] md:min-h-0"
             >
-              <div className="flex-1 rounded-xl md:rounded-2xl overflow-hidden border border-black/5">
+              <div className="flex-1 rounded-xl md:rounded-2xl overflow-hidden border border-black/5 group">
                 <img
                   src={SECTION3_IMG1}
-                  alt="Implant Procedure"
-                  className="w-full h-full object-cover"
+                  alt="Ocean world lesson environment"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
-              <div className="flex-1 rounded-xl md:rounded-2xl overflow-hidden border border-black/5">
+              <div className="flex-1 rounded-xl md:rounded-2xl overflow-hidden border border-black/5 group">
                 <img
                   src={SECTION3_IMG2}
-                  alt="Dental Restoration"
-                  className="w-full h-full object-cover"
+                  alt="Prehistoric earth lesson environment"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               </div>
             </div>
 
-            {/* Consultation Card */}
+            {/* Solar System Module Card */}
             <div
               style={s3Reveal.getAnimStyle(2)}
-              className="rounded-xl md:rounded-2xl bg-zinc-200 p-5 md:p-7 flex items-end justify-between flex-[0.8] min-h-[160px] md:min-h-0 text-left"
+              className="rounded-xl md:rounded-2xl bg-vermillion/10 border border-vermillion/20 p-5 md:p-7 flex items-end justify-between flex-[0.8] min-h-[160px] md:min-h-0 text-left"
             >
               <div>
-                <p className="text-xs md:text-sm font-semibold text-black/50 uppercase tracking-wider mb-2">
-                  Consultation
+                <p className="text-xs md:text-sm font-semibold text-vermillion uppercase tracking-wider mb-2">
+                  Guided Tour
                 </p>
-                <h3 className="text-xl md:text-3xl font-bold text-black leading-6 md:leading-8">
-                  Dental<br />Restoration<br />Services
+                <h3 className="text-xl md:text-3xl font-bold text-charcoalText leading-6 md:leading-8 tracking-tight">
+                  Fly Through<br />the Solar<br />System
                 </h3>
               </div>
-              <button className="px-6 py-2.5 md:px-8 md:py-4 bg-white rounded-full text-black text-sm md:text-base font-bold hover:scale-105 active:scale-95 transition-all duration-200 shadow-md">
-                Book Online
-              </button>
+              <a
+                href="http://localhost:5174/"
+                className="px-6 py-2.5 md:px-8 md:py-4 bg-charcoalText rounded-full text-white text-sm md:text-base font-bold hover:bg-vermillion hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
+              >
+                Try Demo
+              </a>
             </div>
 
           </div>
 
-          {/* Right Column (Single Tall Patient Card) */}
+          {/* Right Column (Single Tall Classmates Card) */}
           <div
             style={s3Reveal.getAnimStyle(3)}
-            className="rounded-xl md:rounded-2xl overflow-hidden relative min-h-[350px] md:min-h-0 border border-black/5"
+            className="rounded-xl md:rounded-2xl overflow-hidden relative min-h-[350px] md:min-h-0 border border-black/5 group"
           >
             <img
               src={SECTION3_BG}
-              alt="Smiling patient"
-              className="w-full h-full object-cover"
+              alt="Virtual classmates in the 3D classroom"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
             />
             {/* Overlay Grid bottom cards */}
             <div className="absolute bottom-3 left-3 right-3 md:bottom-5 md:left-5 md:right-5 flex gap-1.5 md:gap-2 z-10">
-              
+
               {/* White Overlay card */}
               <div className="flex-1 bg-white rounded-xl md:rounded-2xl p-4 md:p-5 flex flex-col justify-between h-36 md:h-52 text-left shadow-lg">
-                <h4 className="text-sm md:text-lg font-bold text-black leading-tight">
-                  The Process<br />of Installing<br />Implants
+                <h4 className="text-sm md:text-lg font-bold text-charcoalText leading-tight tracking-tight">
+                  How the AI<br />Plans Your<br />Lesson
                 </h4>
-                <div className="self-end w-8 h-8 md:w-10 md:h-10 rounded-full border border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-300">
+                <div className="self-end w-8 h-8 md:w-10 md:h-10 rounded-full border border-charcoalText flex items-center justify-center hover:bg-charcoalText hover:text-white transition-colors duration-300 cursor-pointer">
                   <svg
                     width="12"
                     height="12"
@@ -502,11 +507,11 @@ export default function DentalClinic() {
               </div>
 
               {/* Glass Overlay card */}
-              <div className="flex-1 bg-white/20 backdrop-blur-xl rounded-xl md:rounded-2xl p-4 md:p-5 flex flex-col justify-between h-36 md:h-52 text-left border border-white/10 shadow-lg">
-                <h4 className="text-sm md:text-lg font-bold text-white leading-tight">
-                  Caring<br />for Dental<br />Implants
+              <div className="flex-1 bg-black/30 backdrop-blur-xl rounded-xl md:rounded-2xl p-4 md:p-5 flex flex-col justify-between h-36 md:h-52 text-left border border-white/15 shadow-lg">
+                <h4 className="text-sm md:text-lg font-bold text-white leading-tight tracking-tight">
+                  Breaks that<br />Protect<br />Young Eyes
                 </h4>
-                <div className="self-end w-8 h-8 md:w-10 md:h-10 rounded-full border border-white flex items-center justify-center text-white hover:bg-white hover:text-black transition-colors duration-300">
+                <div className="self-end w-8 h-8 md:w-10 md:h-10 rounded-full border border-white flex items-center justify-center text-white hover:bg-white hover:text-charcoalText transition-colors duration-300 cursor-pointer">
                   <svg
                     width="12"
                     height="12"

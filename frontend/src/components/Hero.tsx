@@ -59,7 +59,7 @@ export default function Hero() {
         {/* Right CTA */}
         <a
           href="http://localhost:5174/"
-          className="bg-charcoalText text-white text-xs font-semibold px-6 py-2.5 rounded-full transition-colors hover:bg-black uppercase tracking-wider animate-pulse"
+          className="bg-charcoalText text-white text-xs font-semibold px-6 py-2.5 rounded-full transition-all duration-300 hover:bg-vermillion hover:shadow-lg hover:shadow-vermillion/25 uppercase tracking-wider"
         >
           Enter Class
         </a>
@@ -70,7 +70,7 @@ export default function Hero() {
         
         {/* Eyebrow and Script label */}
         <div className="flex items-center gap-3 text-charcoalText/40 select-none">
-          <span className="text-[10px] font-bold tracking-[0.25em] uppercase font-sans">FUTURISTIC</span>
+          <span className="text-[10px] font-bold tracking-[0.25em] uppercase font-sans">AI Virtual Classroom · Classes 1–4</span>
           <span className="text-[11px] font-serif-italic font-medium">01</span>
         </div>
 
@@ -102,7 +102,7 @@ export default function Hero() {
             98.4%
           </div>
           <div className="text-[10px] font-semibold text-charcoalText/40 uppercase tracking-widest mt-1">
-            Reality Engagement
+            Student Attention Engagement
           </div>
         </div>
 
@@ -127,7 +127,7 @@ export default function Hero() {
         
         {/* Description */}
         <p className="text-xs text-charcoalText/60 leading-relaxed max-w-[420px] text-left">
-          In this futuristic realm, users can explore hyper-realistic virtual classrooms, interact with AI-driven teachers, and solve customized doubts in real-time.
+          A living 3D classroom in your browser — a real AI teacher who plans structured lessons, classmates who ask questions, a whiteboard that solves your child&apos;s own doubts step-by-step, and gesture controls powered entirely on-device.
         </p>
 
       </div>

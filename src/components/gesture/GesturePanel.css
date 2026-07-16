@@ -14,7 +14,7 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
-  font-family: "Segoe UI", sans-serif;
+  font-family: "Inter Tight", "Segoe UI", sans-serif;
   pointer-events: none;
 }
 
@@ -26,11 +26,11 @@
 .gesture-view {
   position: relative;
   width: 224px;
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 3px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
-  background: #101426;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 36px -12px rgba(15, 23, 42, 0.45);
+  background: #0f172a;
 }
 
 .gesture-canvas {
@@ -64,15 +64,22 @@
 }
 
 .gesture-toggle {
-  border: none;
+  border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: 999px;
-  padding: 7px 14px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: 8px 15px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.9);
-  color: #22335c;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f172a;
+  box-shadow: 0 6px 16px -6px rgba(15, 23, 42, 0.3);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+}
+
+.gesture-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px -8px rgba(15, 23, 42, 0.35);
 }
 
 .palm-cursor {

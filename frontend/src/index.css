@@ -10,6 +10,10 @@
   color: #0F172A;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   background-color: #FFFFFF;

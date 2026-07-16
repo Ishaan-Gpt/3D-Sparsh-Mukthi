@@ -40,13 +40,15 @@ export function LessonHUD({ resumeFromBreak, pauseClass, resumeClass, answerDoub
   const clearUserHand = useLessonStore((s) => s.clearUserHand);
   const setPendingDoubt = useLessonStore((s) => s.setPendingDoubt);
   const doubtCheck = useLessonStore((s) => s.doubtCheck);
-  const sessionEndsAt = useLessonStore((s) => s.sessionEndsAt);
+  const progress = useLessonStore((s) => s.progress);
   const breakEndsAt = useLessonStore((s) => s.breakEndsAt);
   const enterSolar = useLessonStore((s) => s.enterSolar);
   const reset = useLessonStore((s) => s.reset);
+  const boardOpen = useLessonStore((s) => s.boardOpen);
+  const setBoardOpen = useLessonStore((s) => s.setBoardOpen);
 
-  const sessionLeft = useCountdown(sessionEndsAt);
   const breakLeft = useCountdown(breakEndsAt);
+  const pct = Math.round(progress * 100);
 
   const immersiveAvailable = /solar|planet|space/i.test(config?.topic ?? "");
   const quit = () => {
@@ -84,7 +86,12 @@ export function LessonHUD({ resumeFromBreak, pauseClass, resumeClass, answerDoub
           {config?.subject}: {config?.topic}
         </span>
         <span className="hud-chip">{PHASE_LABELS[phase] ?? phase}</span>
-        {sessionLeft && <span className="hud-timer">⏱ {sessionLeft}</span>}
+        <span className="hud-timer hud-progress" title="How much of today's lesson is done">
+          <span className="hud-progress-bar">
+            <span className="hud-progress-fill" style={{ width: `${pct}%` }} />
+          </span>
+          {pct}%
+        </span>
       </div>
 
       {/* captions */}
@@ -115,6 +122,14 @@ export function LessonHUD({ resumeFromBreak, pauseClass, resumeClass, answerDoub
             🪐 Immersive Study
           </button>
         )}
+        <button
+          className="hud-btn"
+          onClick={() => setBoardOpen(!boardOpen)}
+          disabled={["break", "end", "paused"].includes(phase)}
+          title="All the notes your teacher has written so far, live"
+        >
+          📖 {boardOpen ? "Close board" : "My Whiteboard"}
+        </button>
         <button
           className="hud-btn"
           onClick={pauseClass}

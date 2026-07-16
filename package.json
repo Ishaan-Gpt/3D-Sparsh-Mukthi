@@ -12,13 +12,16 @@
     "dev:ai": "node proxy-server/proxy.js"
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.1",
     "@mediapipe/tasks-vision": "^0.10.35",
     "@react-three/drei": "^9.102.6",
     "@react-three/fiber": "^8.15.19",
+    "@remotion/player": "^4.0.489",
     "axios": "^1.6.8",
     "openai": "^4.29.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "remotion": "^4.0.489",
     "three": "^0.162.0",
     "zustand": "^5.0.14"
   },

@@ -86,8 +86,8 @@ export default function Analytics() {
               alt="Telemetry Background"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
-            {/* Fine Light Tint Mask */}
-            <div className="absolute inset-0 bg-white/15" />
+            {/* Bottom fade keeps text legible without washing out the image */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/30 to-transparent" />
           </div>
 
           {/* Glass Card Widget */}
@@ -180,8 +180,8 @@ export default function Analytics() {
               alt="Classroom Dynamics Background"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
-            {/* Fine Light Tint Mask */}
-            <div className="absolute inset-0 bg-white/25" />
+            {/* Bottom fade keeps text legible without washing out the image */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/25 to-transparent" />
           </div>
 
           {/* DAILY tag */}

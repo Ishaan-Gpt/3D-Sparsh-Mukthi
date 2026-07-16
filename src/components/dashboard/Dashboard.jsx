@@ -71,7 +71,12 @@ export function Dashboard() {
       <main className="dash-page">
         {/* ---------- hero ---------- */}
         <header className="dash-hero">
-          <div className="dash-logo">🏫</div>
+          <div className="dash-logo" aria-hidden="true">
+            <svg viewBox="0 0 256 256">
+              <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
+            </svg>
+          </div>
+          <span className="dash-eyebrow">AI Virtual Classroom · Classes 1–4</span>
           <h1>
             Sparsh <em>Mukthi</em>
           </h1>
@@ -212,7 +217,11 @@ export function Dashboard() {
         <footer className="dash-footer">
           <div className="foot-grid">
             <div className="foot-brand">
-              <span className="foot-logo">🏫</span>
+              <span className="foot-logo" aria-hidden="true">
+                <svg viewBox="0 0 256 256" width="26" height="26" style={{ fill: "#0f172a" }}>
+                  <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
+                </svg>
+              </span>
               <h4>
                 Sparsh <em>Mukthi</em>
               </h4>

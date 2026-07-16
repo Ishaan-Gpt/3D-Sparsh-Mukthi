@@ -58,15 +58,16 @@ function pcmBase64ToWavUrl(b64, rate = 24000) {
 
 async function fetchLineAudio(text, opts, retries = 1) {
   const voiceName = opts.voiceName ?? (opts.voiceGender === "male" ? "Charon" : "Kore");
+  const orpheusVoice = opts.orpheusVoice ?? (opts.voiceGender === "male" ? "leo" : "tara");
   const style = opts.styleNote ?? "a warm Indian primary school teacher";
-  const key = `${voiceName}|${style}|${text}`;
+  const key = `${orpheusVoice}|${voiceName}|${style}|${text}`;
   if (audioCache.has(key)) return audioCache.get(key);
   for (let attempt = 0; ; attempt++) {
     try {
       const res = await fetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, voiceName, style }),
+        body: JSON.stringify({ text, voiceName, orpheusVoice, style }),
       });
       if (!res.ok) throw new Error(`tts ${res.status}`);
       const { audio, rate } = await res.json();
@@ -78,6 +79,37 @@ async function fetchLineAudio(text, opts, retries = 1) {
       await new Promise((r) => setTimeout(r, 700)); // brief backoff (model overload)
     }
   }
+}
+
+// ---------- whole-lesson preloader ----------
+// Warm the audio cache for the ENTIRE lesson right after the plan arrives, so
+// ~90% of speech starts instantly from cache (Orpheus generates once, up
+// front). Only live doubt answers still generate on the fly. Concurrency is
+// limited so the TTS server stays responsive for the line being spoken NOW.
+export function warmSpeechCache(tasks, { concurrency = 2 } = {}) {
+  let cancelled = false;
+  const queue = [];
+  for (const t of tasks) {
+    for (const line of t.lines || []) {
+      const text = String(line).trim();
+      if (text) queue.push({ text, opts: t.opts || {} });
+    }
+  }
+  let idx = 0;
+  const worker = async () => {
+    while (!cancelled && idx < queue.length && !serverTTSBroken) {
+      const job = queue[idx++];
+      try {
+        await fetchLineAudio(job.text, job.opts, 0);
+      } catch {
+        /* the live speaker will fetch/fallback when the line actually plays */
+      }
+    }
+  };
+  for (let i = 0; i < Math.max(1, concurrency); i++) worker();
+  return () => {
+    cancelled = true;
+  };
 }
 
 // ---------- main sequential speaker ----------
@@ -121,13 +153,22 @@ function speakOneBrowser(line, opts) {
 }
 
 async function speakViaServer(lines, opts, token) {
-  // prefetch line 0 (and pipeline the rest while playing)
-  let nextPromise = fetchLineAudio(lines[0], opts).catch((e) => e);
+  // pipeline 2 lines ahead: neural TTS (Orpheus) can be slower than realtime,
+  // so the next lines generate WHILE the current one plays — no gaps, and the
+  // same human voice is used for every line, not just the first.
+  const pending = new Map();
+  const ensure = (i) => {
+    if (i >= lines.length) return null;
+    if (!pending.has(i)) pending.set(i, fetchLineAudio(lines[i], opts).catch((e) => e));
+    return pending.get(i);
+  };
+  ensure(0);
   for (let i = 0; i < lines.length; i++) {
     if (token !== currentToken) return;
-    const urlOrErr = await nextPromise;
+    ensure(i + 1);
+    ensure(i + 2);
+    const urlOrErr = await ensure(i);
     if (token !== currentToken) return;
-    if (i + 1 < lines.length) nextPromise = fetchLineAudio(lines[i + 1], opts).catch((e) => e);
 
     opts.onLineStart?.(lines[i], i);
     try {

@@ -225,16 +225,17 @@ function SolarCameraRig() {
     const k = 1 - Math.exp(-delta * 3);
 
     // gesture orbit: open palm steers around the system (all modes)
-    if (gestureState.enabled && gestureState.present && gestureState.palmOpen && !gestureState.pinching) {
+    if (gestureState.enabled && gestureState.present && gestureState.palmOpen && !gestureState.twoHands) {
       const tTheta = (gestureState.lookX - 0.5) * Math.PI * 2.2;
       const tPhi = THREE.MathUtils.clamp(0.5 + gestureState.lookY * 1.8, 0.25, Math.PI - 0.35);
       sph.current.theta += (tTheta - sph.current.theta) * k * 0.7;
       sph.current.phi += (tPhi - sph.current.phi) * k * 0.7;
     }
-    // hold-pinch dollies the zoom bias in; release keeps it (wheel/buttons adjust too)
-    if (gestureState.enabled && gestureState.pinching) {
-      const zoomK = THREE.MathUtils.clamp((0.42 - gestureState.pinch) / 0.3, 0, 1);
-      cameraGoal.bias = THREE.MathUtils.clamp(cameraGoal.bias * (1 - zoomK * 0.02), 0.3, 4);
+    // 🙌 two-hand zoom: spread = fly closer, together = pull back.
+    // zoomVel is consumed once per change so the dolly can't over-apply.
+    if (gestureState.enabled && gestureState.zoomVel) {
+      cameraGoal.bias = THREE.MathUtils.clamp(cameraGoal.bias * (1 - gestureState.zoomVel * 5), 0.3, 4);
+      gestureState.zoomVel = 0;
     }
 
     if (!cameraGoal.driven) {
@@ -284,13 +285,21 @@ function GestureSelect() {
 export function SolarSystem() {
   const solarMode = useLessonStore((s) => s.solarMode);
   const setSelectedBody = useLessonStore((s) => s.setSelectedBody);
+  const solarEye = useLessonStore((s) => s.solarEye);
   const paused = solarMode === "tour"; // freeze orbits so the tour can park at planets
 
   return (
-    <Canvas className="canvas" camera={{ position: [50, 40, 70], fov: 55, far: 1200 }} dpr={[1, 1.75]}>
-      <color attach="background" args={["#04060f"]} />
-      <ambientLight intensity={0.25} />
-      <Starfield />
+    <Canvas
+      className="canvas"
+      camera={{ position: [50, 40, 70], fov: 55, far: 1200 }}
+      dpr={[1, 1.75]}
+      gl={{ alpha: true }}
+      // 👁 eye mode: transparent canvas — your webcam room shows through
+      style={solarEye ? { background: "transparent", position: "relative", zIndex: 1 } : undefined}
+    >
+      {!solarEye && <color attach="background" args={["#04060f"]} />}
+      <ambientLight intensity={solarEye ? 0.45 : 0.25} />
+      {!solarEye && <Starfield />}
       <Sun />
       {BODIES.filter((b) => b.id !== "sun").map((b) => (
         <Planet

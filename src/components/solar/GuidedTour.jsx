@@ -35,6 +35,7 @@ export function GuidedTour() {
     cancelRef.current = speakLines(stop.spoken, {
       voiceGender: teacher.voiceGender,
       voiceName: teacher.voiceName,
+      orpheusVoice: teacher.orpheusVoice,
       styleNote: `${teacher.name ?? "a teacher"}, a ${teacher.style ?? "warm"} Indian primary school teacher`,
       rate: teacher.rate,
       pitch: teacher.pitch,

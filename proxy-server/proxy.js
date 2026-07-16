@@ -65,9 +65,30 @@ const lessonSchema = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["heading", "sentences", "boardPoints", "peerQuestion"],
+        required: ["heading", "sentences", "boardPoints", "peerQuestion", "visual"],
         properties: {
           heading: { type: "string", description: "Short segment heading for the whiteboard" },
+          visual: {
+            type: "object",
+            additionalProperties: false,
+            required: ["kind", "items", "caption"],
+            description:
+              "An animated concept visual shown on the whiteboard while teaching this segment. Pick the kind that best fits the idea.",
+            properties: {
+              kind: {
+                type: "string",
+                enum: ["count", "cycle", "compare", "spotlight"],
+                description:
+                  "count = things counted one by one (numbers, groups); cycle = a repeating process (water cycle, seasons, day/night); compare = quantities side by side (bigger/smaller, more/less); spotlight = one key word or fact celebrated",
+              },
+              items: {
+                type: "array",
+                description: "2-6 very short labels (max 3 words each, emoji welcome) that drive the animation",
+                items: { type: "string" },
+              },
+              caption: { type: "string", description: "one short line under the animation, max 8 words" },
+            },
+          },
           sentences: {
             type: "array",
             description: "4-6 short spoken sentences teaching this part",
@@ -125,14 +146,20 @@ const lessonSchema = {
     },
     quiz: {
       type: "array",
-      description: "2 fun oral quiz questions with answers, phrased as spoken sentences",
+      description: "2 fun quiz questions the child answers by ticking an option on the whiteboard",
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["question", "answer"],
+        required: ["question", "answer", "options", "correctIndex"],
         properties: {
           question: { type: "string" },
-          answer: { type: "string" },
+          answer: { type: "string", description: "the correct answer, spoken if needed" },
+          options: {
+            type: "array",
+            description: "exactly 3 short answer choices (max 6 words each); one is correct",
+            items: { type: "string" },
+          },
+          correctIndex: { type: "integer", description: "0-based index of the correct option" },
         },
       },
     },
@@ -280,6 +307,7 @@ app.get("/api/health", async (req, res) => {
       gemini: Boolean(geminiKey),
       claude: Boolean(anthropic),
       openai: Boolean(openai),
+      orpheusTTS: Boolean(process.env.ORPHEUS_TTS_URL),
     },
   });
 });
@@ -355,19 +383,99 @@ If the answer involves steps or working (like a math sum), include short boardSt
 });
 
 // ---------------------------------------------------------------------------
-// Human-quality speech via Gemini TTS (expressive Indian-teacher delivery).
-// Returns base64 PCM (24kHz mono 16-bit) that the client wraps as WAV.
+// Human-quality speech. Provider order:
+//   1. Orpheus TTS (canopyai/Orpheus-TTS) — most human voice, unique voice per
+//      teacher/classmate. Reached via an OpenAI-compatible speech server
+//      (see orpheus-server/README.md) at ORPHEUS_TTS_URL.
+//   2. Gemini TTS (expressive prebuilt voices) — current architecture.
+//   3. (client-side) browser speechSynthesis — final fallback in src/lib/tts.js.
+// Returns base64 PCM (mono 16-bit) + sample rate that the client wraps as WAV.
 // ---------------------------------------------------------------------------
 const TTS_MODELS = ["gemini-2.5-flash-preview-tts"];
 const ttsCache = new Map(); // key -> {audio, mime} (keeps repeated lines instant)
 
-app.post("/api/tts", async (req, res) => {
-  const { text = "", voiceName = "Kore", style = "a warm Indian primary school teacher" } = req.body || {};
-  if (!text.trim()) return res.status(400).json({ error: "text required" });
-  if (!geminiKey) return res.status(503).json({ error: "no tts provider" });
+const ORPHEUS_URL = (process.env.ORPHEUS_TTS_URL || "").replace(/\/$/, "");
+const ORPHEUS_MODEL = process.env.ORPHEUS_TTS_MODEL || "orpheus";
+// generation can be slower than realtime on modest GPUs — give it room; the
+// client pipelines 2 lines ahead so speech still flows without gaps
+const ORPHEUS_TIMEOUT_MS = Number(process.env.ORPHEUS_TIMEOUT_MS || 60000);
+const ORPHEUS_VOICES = ["tara", "leah", "jess", "leo", "dan", "mia", "zac", "zoe"];
+let orpheusDownUntil = 0; // only after REPEATED failures — one slow line must not
+let orpheusFailStreak = 0; // knock Orpheus out for the rest of the lesson
 
-  const key = `${voiceName}|${style}|${text}`;
+// Minimal RIFF/WAV parser: find the data chunk, return { pcmBase64, rate }.
+function wavToPcm(buf) {
+  if (buf.length < 44 || buf.toString("ascii", 0, 4) !== "RIFF") throw new Error("not a wav");
+  const rate = buf.readUInt32LE(24);
+  let off = 12;
+  while (off + 8 <= buf.length) {
+    const id = buf.toString("ascii", off, off + 4);
+    const size = buf.readUInt32LE(off + 4);
+    if (id === "data") {
+      return { pcmBase64: buf.subarray(off + 8, off + 8 + size).toString("base64"), rate };
+    }
+    off += 8 + size + (size % 2);
+  }
+  throw new Error("wav has no data chunk");
+}
+
+async function orpheusTTS(text, voice) {
+  const v = ORPHEUS_VOICES.includes(voice) ? voice : "tara";
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ORPHEUS_TIMEOUT_MS);
+  try {
+    const r = await fetch(`${ORPHEUS_URL}/v1/audio/speech`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: ORPHEUS_MODEL, input: text, voice: v, response_format: "wav" }),
+      signal: ctrl.signal,
+    });
+    if (!r.ok) throw new Error(`orpheus ${r.status}`);
+    const buf = Buffer.from(await r.arrayBuffer());
+    const { pcmBase64, rate } = wavToPcm(buf);
+    return { audio: pcmBase64, mime: "audio/pcm", rate, provider: "orpheus" };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+app.post("/api/tts", async (req, res) => {
+  const {
+    text = "",
+    voiceName = "Kore",
+    orpheusVoice = "",
+    style = "a warm Indian primary school teacher",
+  } = req.body || {};
+  if (!text.trim()) return res.status(400).json({ error: "text required" });
+  if (!ORPHEUS_URL && !geminiKey) return res.status(503).json({ error: "no tts provider" });
+
+  const key = `${orpheusVoice}|${voiceName}|${style}|${text}`;
   if (ttsCache.has(key)) return res.json(ttsCache.get(key));
+
+  // ---- 1. Orpheus (unique human voice per character) ----
+  if (ORPHEUS_URL && Date.now() > orpheusDownUntil) {
+    try {
+      const out = await orpheusTTS(text, orpheusVoice);
+      orpheusFailStreak = 0; // healthy — keep using Orpheus for every line
+      if (ttsCache.size > 400) ttsCache.clear();
+      ttsCache.set(key, out);
+      return res.json(out);
+    } catch (err) {
+      orpheusFailStreak += 1;
+      // 2 consecutive failures = server actually down → back off briefly.
+      // A single slow/failed line just falls to Gemini and Orpheus is tried
+      // again on the very next line.
+      if (orpheusFailStreak >= 2) {
+        orpheusDownUntil = Date.now() + 60000;
+        console.error("[orpheus]", err.message, "— 2 failures in a row, resting 60s");
+      } else {
+        console.error("[orpheus]", err.message, "— this line falls to Gemini, retrying Orpheus next line");
+      }
+    }
+  }
+
+  // ---- 2. Gemini TTS (existing architecture) ----
+  if (!geminiKey) return res.status(502).json({ error: "tts failed", detail: "orpheus down, no gemini key" });
 
   const prompt = `Speak as ${style}, with a natural Indian English accent, lively and warm — never monotone. Use natural pauses and gentle emphasis, talking to young children. Say exactly this: ${text}`;
 

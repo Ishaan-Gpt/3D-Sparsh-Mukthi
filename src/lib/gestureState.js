@@ -10,8 +10,11 @@ export const gestureState = {
   y: 0.5,
   lookX: 0.5, // palm centre — steering channel for look-around (separate from cursor)
   lookY: 0.5,
-  pinch: 1, // thumb-index distance / hand size (small = pinched)
-  pinching: false, // hold-to-zoom
+  pinch: 1, // thumb-index distance / hand size (legacy, no longer drives zoom)
+  pinching: false, // legacy — zoom is now two-handed
+  twoHands: false, // both hands visible → zoom mode
+  zoomK: 0, // accumulated zoom level 0..1 (two hands apart = in, together = out)
+  zoomVel: 0, // per-update change in two-hand spread (consumed by the solar rig)
   raiseProgress: 0, // 0..1 toward the 3s hand-raise trigger
   facePresent: false, // attention-aware teaching signal
   lastFaceAt: 0, // timestamp of last face detection (0 = face tracking off)

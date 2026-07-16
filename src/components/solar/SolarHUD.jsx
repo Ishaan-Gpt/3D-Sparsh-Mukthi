@@ -6,6 +6,8 @@ import { cameraGoal } from "./SolarSystem";
 import "./Solar.css";
 
 function ZoomControls() {
+  const solarEye = useLessonStore((s) => s.solarEye);
+  const toggleSolarEye = useLessonStore((s) => s.toggleSolarEye);
   const zoom = (f) => {
     cameraGoal.bias = Math.min(4, Math.max(0.3, cameraGoal.bias * f));
   };
@@ -19,6 +21,13 @@ function ZoomControls() {
       </button>
       <button className="solar-btn round" title="Reset view" onClick={() => (cameraGoal.bias = 1)}>
         🎯
+      </button>
+      <button
+        className={`solar-btn round ${solarEye ? "eye-on" : ""}`}
+        title={solarEye ? "Back to space" : "Eye mode: planets float in YOUR room — reach out and touch them!"}
+        onClick={toggleSolarEye}
+      >
+        👁
       </button>
     </div>
   );
@@ -142,7 +151,7 @@ export function SolarHUD() {
       {/* interact: hint + info card */}
       {solarMode === "interact" && !body && (
         <div className="solar-hint">
-          🖐 move hand = fly around · 🤏 pinch = zoom · tap/click a planet to learn about it
+          🖐 move hand = fly around · 🙌 two hands apart/close = zoom · tap/click a planet to learn about it
         </div>
       )}
       {solarMode === "interact" && body && (
