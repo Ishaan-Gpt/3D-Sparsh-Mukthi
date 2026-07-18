@@ -1,11 +1,60 @@
-import { Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Suspense, useEffect } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
+import * as THREE from "three";
 import { Classroom } from "./world/Classroom";
 import { Teacher } from "./world/Teacher";
 import { Students } from "./world/Students";
 import { Whiteboard } from "./world/Whiteboard";
 import { FPVCamera } from "./world/FPVCamera";
+
+const isVRMode = typeof window !== "undefined" && window.location.search.includes("vr=true");
+
+function StereoRenderer() {
+  const { gl, scene, camera } = useThree();
+
+  useFrame(() => {
+    gl.autoClear = false;
+    gl.clear();
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const halfWidth = width / 2;
+
+    const eyeSep = 0.064; // Average pupillary distance
+    const aspect = halfWidth / height;
+
+    const originalPos = camera.position.clone();
+    const originalRot = camera.rotation.clone();
+
+    // 1. Render Left Eye Viewport
+    gl.setViewport(0, 0, halfWidth, height);
+    gl.setScissor(0, 0, halfWidth, height);
+    gl.setScissorTest(true);
+
+    camera.aspect = aspect;
+    camera.updateProjectionMatrix();
+
+    camera.position.copy(originalPos).addScaledVector(new THREE.Vector3(-1, 0, 0).applyEuler(originalRot), eyeSep / 2);
+    gl.render(scene, camera);
+
+    // 2. Render Right Eye Viewport
+    gl.setViewport(halfWidth, 0, halfWidth, height);
+    gl.setScissor(halfWidth, 0, halfWidth, height);
+    gl.setScissorTest(true);
+
+    camera.position.copy(originalPos).addScaledVector(new THREE.Vector3(1, 0, 0).applyEuler(originalRot), eyeSep / 2);
+    gl.render(scene, camera);
+
+    // Restore Host camera reference
+    camera.position.copy(originalPos);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    gl.setScissorTest(false);
+  }, 1);
+
+  return null;
+}
 
 // First-person classroom: you sit at a desk. Head-look via gestures or mouse
 // drag; pinch (or wheel) zooms toward whatever you face (e.g. the board).
@@ -15,6 +64,7 @@ const Experience = () => {
   return (
     <Canvas className="canvas" camera={{ position: [0, 1.1, 4.6], fov: 50 }}>
       {!DEBUG_ORBIT && <FPVCamera />}
+      {isVRMode && <StereoRenderer />}
       {DEBUG_ORBIT && <DebugTopCam />}
       <Suspense fallback={null}>
         <Environment preset="sunset" />
@@ -31,8 +81,6 @@ const Experience = () => {
 };
 
 // dev-only: top-down survey camera (?debugcam)
-import { useThree } from "@react-three/fiber";
-import { useEffect } from "react";
 function DebugTopCam() {
   const { camera } = useThree();
   useEffect(() => {

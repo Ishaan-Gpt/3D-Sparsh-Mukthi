@@ -579,6 +579,29 @@ app.post("/api/chatgpt", async (req, res) => {
   }
 });
 
+// WebRTC signaling memory store
+let webrtcSignals = {};
+
+app.post("/api/webrtc/signal", (req, res) => {
+  const { role, signal } = req.body || {};
+  if (!role || !signal) {
+    return res.status(400).json({ error: "role and signal required" });
+  }
+  webrtcSignals[role] = signal;
+  res.json({ success: true });
+});
+
+app.get("/api/webrtc/signal/:role", (req, res) => {
+  const { role } = req.params;
+  const signal = webrtcSignals[role] || null;
+  res.json({ signal });
+});
+
+app.post("/api/webrtc/clear", (req, res) => {
+  webrtcSignals = {};
+  res.json({ success: true });
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`AI classroom proxy running on port ${PORT}`);

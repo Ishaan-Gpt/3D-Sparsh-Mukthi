@@ -16,6 +16,8 @@ const MAX_ZOOM_FOV = 22;
 const GESTURE_YAW_RANGE = 2.2; // radians of look-around from hand position
 const GESTURE_PITCH_RANGE = 1.0;
 
+import { remoteGyro } from "../../App";
+
 export function FPVCamera() {
   const { camera, gl } = useThree();
   const mouse = useRef({ yaw: 0, pitch: 0, dragging: false, lastX: 0, lastY: 0 });
@@ -66,7 +68,8 @@ export function FPVCamera() {
     const st = useLessonStore.getState();
     const k = 1 - Math.exp(-delta * 4); // smoothing
 
-    // zoom amount first — zooming always aims at the whiteboard.
+    // zoom amount first — zoom magnifies WHEREVER you are currently looking
+    // (mouse drag or 🖐 palm steer choose the direction; zoom never retargets).
     // 🙌 two-hand gesture sets zoomK (spread apart = in, together = out) and
     // it STAYS where you leave it, like a real zoom level.
     let zoomT = mouse.current.wheelZoom ?? 0;
@@ -80,11 +83,9 @@ export function FPVCamera() {
     }
     const zoomK = smooth.current.zoom;
 
-    // where the lesson wants you to look by default
+    // where the lesson wants you to look by default (zoom does NOT change it)
     const lessonTarget = st.boardFocus || st.phase === "whiteboard" ? BOARD : TEACHER_HEAD;
-    // pinch/wheel zoom pulls the view onto the whiteboard
-    const target = lessonTarget.clone().lerp(BOARD, THREE.MathUtils.clamp(zoomK * 2, 0, 1));
-    const baseDir = target.clone().sub(SEAT).normalize();
+    const baseDir = lessonTarget.clone().sub(SEAT).normalize();
     const base = dirToYawPitch(baseDir);
 
     // gesture look: open palm steers your head; drop the hand to return
@@ -97,8 +98,9 @@ export function FPVCamera() {
     smooth.current.gYaw += (gYawT - smooth.current.gYaw) * k;
     smooth.current.gPitch += (gPitchT - smooth.current.gPitch) * k;
 
-    const yawT = base.yaw + smooth.current.gYaw + -mouse.current.yaw;
-    const pitchT = base.pitch + smooth.current.gPitch - mouse.current.pitch;
+    // Combine standard look vectors with incoming remote phone gyroscope metrics
+    const yawT = base.yaw + smooth.current.gYaw + -mouse.current.yaw + remoteGyro.yaw;
+    const pitchT = base.pitch + smooth.current.gPitch - mouse.current.pitch + remoteGyro.pitch;
     if (smooth.current.yaw === null) {
       smooth.current.yaw = yawT;
       smooth.current.pitch = pitchT;
@@ -106,11 +108,11 @@ export function FPVCamera() {
     smooth.current.yaw += (yawT - smooth.current.yaw) * k;
     smooth.current.pitch += (pitchT - smooth.current.pitch) * k;
 
-    // zoom = real dolly toward the whiteboard + narrower FOV: the board
-    // canvas genuinely fills the screen at full pinch.
-    const dollyTarget = new THREE.Vector3(0, 0.6, -10.5);
-    camera.position.copy(SEAT).lerp(dollyTarget, THREE.MathUtils.clamp(zoomK, 0, 1) * 0.95);
+    // zoom = real dolly ALONG the current view direction + narrower FOV:
+    // whatever the cursor/look is aimed at fills the screen at full zoom.
     camera.rotation.set(smooth.current.pitch, smooth.current.yaw, 0, "YXZ");
+    const forward = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
+    camera.position.copy(SEAT).addScaledVector(forward, THREE.MathUtils.clamp(zoomK, 0, 1) * 6);
 
     const fovT = BASE_FOV - (BASE_FOV - MAX_ZOOM_FOV) * zoomK;
     smooth.current.fov += (fovT - smooth.current.fov) * k;

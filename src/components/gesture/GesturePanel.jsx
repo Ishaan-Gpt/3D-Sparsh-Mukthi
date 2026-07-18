@@ -13,7 +13,7 @@ const RAISE_MS = 3000;
 const RAISE_COOLDOWN_MS = 6000;
 // two-hand zoom (from the classic touchless virtual-mouse): spread both index
 // fingertips apart to zoom IN, bring them together to zoom OUT
-const ZOOM_STEP = 0.015; // normalized spread change to register (deadband)
+const ZOOM_STEP = 0.045; // normalized spread change to register — slight/tremor movements do nothing
 const ZOOM_GAIN = 1.8; // spread change → zoom level
 // virtual-mouse tuning (inspired by the classic PyAutoGUI touchless mouse)
 const FRAME_REDUCTION = 0.16; // dead border of the camera frame
