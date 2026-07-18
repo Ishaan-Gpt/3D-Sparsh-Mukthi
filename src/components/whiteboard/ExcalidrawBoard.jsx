@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLessonStore } from "../../store/useLessonStore";
 import { boardBridge } from "../../lib/boardBridge";
-import { ConceptPlayer } from "./ConceptPlayer";
+
 import "./Board.css";
 
 /**
@@ -233,7 +233,7 @@ export function ExcalidrawBoard() {
           </button>
         </div>
 
-        {livePage && <ConceptPlayer visual={boardAnim} heading={board.title} points={board.lines} />}
+
 
         <div className="book">
           <button
