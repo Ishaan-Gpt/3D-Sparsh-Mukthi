@@ -1,5 +1,23 @@
 // Same-origin: Vite dev server proxies /api → the AI proxy (port 3001).
 const API_BASE = "";
+const CACHE_PREFIX = "sparsh_mukthi_cache_";
+
+function getCachedItem(key) {
+  try {
+    const data = localStorage.getItem(CACHE_PREFIX + key);
+    return data ? JSON.parse(data) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function setCachedItem(key, val) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(val));
+  } catch (e) {
+    // Silent catch of quota errors
+  }
+}
 
 async function post(path, body) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -20,8 +38,20 @@ export async function checkHealth() {
 }
 
 /** Returns { provider, data: lessonPlan } */
-export function fetchLesson(config) {
-  return post("/api/lesson", {
+export async function fetchLesson(config) {
+  const hasCustomDoubt = Boolean(config.customDoubt && config.customDoubt.trim());
+  const normalizedTopic = String(config.topic || "").replace(/\s+/g, "_");
+  const cacheKey = `lesson_${config.classLevel}_${config.subject}_${normalizedTopic}_${config.teacher.name}`;
+
+  if (!hasCustomDoubt) {
+    const cached = getCachedItem(cacheKey);
+    if (cached) {
+      console.log("[api-cache] Instant hit for lesson:", cacheKey);
+      return cached;
+    }
+  }
+
+  const result = await post("/api/lesson", {
     classLevel: config.classLevel,
     subject: config.subject,
     topic: config.topic,
@@ -31,14 +61,30 @@ export function fetchLesson(config) {
     customDoubt: config.customDoubt,
     segmentCount: 3,
   });
+
+  if (!hasCustomDoubt) {
+    setCachedItem(cacheKey, result);
+  }
+  return result;
 }
 
 /** Returns { provider, data: { stops:[{id,title,spoken,board}] } } */
-export function fetchTour(config) {
-  return post("/api/tour", {
+export async function fetchTour(config) {
+  const cacheKey = `tour_${config?.classLevel ?? 3}_${config?.teacher?.name ?? "Miss_Anaya"}`;
+
+  const cached = getCachedItem(cacheKey);
+  if (cached) {
+    console.log("[api-cache] Instant hit for tour:", cacheKey);
+    return cached;
+  }
+
+  const result = await post("/api/tour", {
     classLevel: config?.classLevel ?? 3,
     teacherName: config?.teacher?.name ?? "Miss Anaya",
   });
+
+  setCachedItem(cacheKey, result);
+  return result;
 }
 
 /** Returns { provider, data: { spoken:[], boardSteps:[] } } */
