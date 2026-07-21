@@ -106,7 +106,7 @@ Examples of meaningful Codex-assisted work include:
 Codex Session ID for the main development conversation:
 
 ```text
-PASTE THE ID FROM /feedback FOR THIS CONVERSATION HERE
+019f7fcd-5db9-7f20-b5af-1f223e1c7a39
 ```
 
 Additional development sessions, if required by the submission form:
