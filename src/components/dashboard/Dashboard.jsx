@@ -71,10 +71,8 @@ export function Dashboard() {
       <main className="dash-page">
         {/* ---------- hero ---------- */}
         <header className="dash-hero">
-          <div className="dash-logo" aria-hidden="true">
-            <svg viewBox="0 0 256 256">
-              <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
-            </svg>
+          <div className="dash-logo" aria-label="Sparsh Mukthi Logo">
+            <img src="/logo.jpg" alt="Sparsh Mukthi" className="dash-logo-img" />
           </div>
           <span className="dash-eyebrow">AI Virtual Classroom · Classes 1–4</span>
           <h1>
@@ -217,17 +215,18 @@ export function Dashboard() {
         <footer className="dash-footer">
           <div className="foot-grid">
             <div className="foot-brand">
-              <span className="foot-logo" aria-hidden="true">
-                <svg viewBox="0 0 256 256" width="26" height="26" style={{ fill: "#0f172a" }}>
-                  <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
-                </svg>
-              </span>
+              <div className="foot-logo-wrapper">
+                <img src="/logo.jpg" alt="Sparsh Mukthi" className="foot-logo-img" />
+              </div>
               <h4>
                 Sparsh <em>Mukthi</em>
               </h4>
               <p>
                 Desktop-VR education for Classes 1–4. Real AI, real voice, real attention — no
                 headset, no keyboard, just you and your hands.
+              </p>
+              <p className="foot-product-note">
+                A product of <a href="https://hikat.xyz" target="_blank" rel="noopener noreferrer" className="foot-link">hikat</a>, made by <a href="https://hikity.xyz" target="_blank" rel="noopener noreferrer" className="foot-link">hikity</a>
               </p>
             </div>
             <div className="foot-col">
@@ -262,6 +261,10 @@ export function Dashboard() {
           </div>
           <div className="foot-bar">
             <span>Made with ❤️ for curious kids</span>
+            <span className="foot-dot">•</span>
+            <span>A product of <a href="https://hikat.xyz" target="_blank" rel="noopener noreferrer" className="foot-link">hikat</a></span>
+            <span className="foot-dot">•</span>
+            <span>Made by <a href="https://hikity.xyz" target="_blank" rel="noopener noreferrer" className="foot-link">hikity</a></span>
             <span className="foot-dot">•</span>
             <span>Your camera never leaves your computer</span>
             <span className="foot-dot">•</span>

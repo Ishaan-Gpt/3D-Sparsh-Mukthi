@@ -52,9 +52,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
 
       {/* Brand Title */}
       <div className="z-10 text-center mb-6">
-        <h2 className="text-xl sm:text-2xl font-heading font-black tracking-[0.15em] uppercase text-charcoalText">
-          SPARSH MUKTHI
-        </h2>
+        <img src="/logo.jpg" alt="Sparsh Mukthi" className="w-40 sm:w-48 h-20 sm:h-24 object-contain mx-auto" />
         <span className="text-[10px] font-serif-italic text-vermillion tracking-wider uppercase">
           3D virtual classroom
         </span>

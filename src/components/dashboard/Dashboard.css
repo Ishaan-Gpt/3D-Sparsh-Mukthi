@@ -78,10 +78,37 @@
   animation: float 4.5s ease-in-out infinite;
 }
 
-.dash-logo svg {
-  width: 44px;
-  height: 44px;
-  fill: var(--ink);
+.dash-logo-img {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.foot-logo-img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.foot-product-note {
+  margin-top: 10px !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  color: var(--ink-soft);
+}
+
+.foot-link {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 0.2s ease;
+}
+
+.foot-link:hover {
+  opacity: 0.8;
 }
 
 .dash-eyebrow {

@@ -221,10 +221,7 @@ export default function Analytics() {
           {/* Brand Pill overlay */}
           <div className="absolute bottom-28 right-6 z-20 flex items-center gap-2">
             <div className="bg-white/70 backdrop-blur-md border border-black/10 rounded-full px-4 py-2 flex items-center gap-1.5 shadow-sm">
-              <svg className="w-4 h-4 fill-charcoalText" viewBox="0 0 256 256">
-                <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
-              </svg>
-              <span className="text-charcoalText text-xs font-serif-italic font-bold">SM3D</span>
+              <img src="/logo.jpg" alt="Sparsh Mukthi" className="w-14 h-7 object-contain" />
             </div>
             <a
               href="http://localhost:5174/"

@@ -55,7 +55,7 @@ export default function MarqueeSection() {
               <img
                 src={item.src}
                 alt={item.label}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover grayscale transition-[transform,filter] duration-500 group-hover:scale-105 group-hover:grayscale-0"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-10" />
               <span className="absolute bottom-5 left-6 text-white text-lg font-serif-italic font-semibold z-20">
@@ -80,7 +80,7 @@ export default function MarqueeSection() {
               <img
                 src={item.src}
                 alt={item.label}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover grayscale transition-[transform,filter] duration-500 group-hover:scale-105 group-hover:grayscale-0"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-10" />
               <span className="absolute bottom-5 left-6 text-white text-lg font-serif-italic font-semibold z-20">

@@ -190,9 +190,7 @@ export default function AIIntelligence() {
             {/* Header Row */}
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-10 h-10 bg-charcoalText rounded-xl flex items-center justify-center">
-                <svg className="w-5 h-5 fill-white" viewBox="0 0 256 256">
-                  <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
-                </svg>
+                <img src="/logo.jpg" alt="Sparsh Mukthi" className="w-9 h-9 object-contain rounded-lg" />
               </div>
               <span className="font-heading font-bold text-sm">Sparsh Mukthi 3D</span>
             </div>
@@ -216,9 +214,7 @@ export default function AIIntelligence() {
                   </p>
                   <div className="flex gap-2 items-start bg-black/5 p-3 rounded-xl border border-black/5">
                     <div className="w-5 h-5 rounded-md bg-charcoalText/10 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-2.5 h-2.5 fill-charcoalText" viewBox="0 0 256 256">
-                        <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
-                      </svg>
+                      <img src="/logo.jpg" alt="" className="w-5 h-5 object-contain rounded-md" />
                     </div>
                     <p className="text-[11px] font-heading font-semibold leading-relaxed text-charcoalText/75">
                       {currentQA.a}

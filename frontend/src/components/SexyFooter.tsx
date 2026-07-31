@@ -186,14 +186,21 @@ export default function SexyFooter() {
         {/* Brand & subscribe */}
         <div className="lg:col-span-2 flex flex-col items-start text-left">
           <div className="flex items-center gap-2 mb-6">
-            <svg className="w-6 h-6 fill-charcoalText" viewBox="0 0 256 256">
-              <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
-            </svg>
-            <span className="text-charcoalText text-lg font-serif-italic font-bold">SM3D</span>
+            <img src="/logo.jpg" alt="Sparsh Mukthi" className="w-32 h-14 object-contain" />
           </div>
-          <p className="text-charcoalText/60 text-xs font-heading font-medium leading-relaxed max-w-[300px] mb-8">
+          <p className="text-charcoalText/60 text-xs font-heading font-medium leading-relaxed max-w-[300px] mb-4">
             Bringing the physical school environment and high-quality private tuition
             directly into the web browser for Classes 1–4. Real AI, real voice, real attention.
+          </p>
+          <p className="text-xs font-heading font-bold text-charcoalText mb-8">
+            A product of{" "}
+            <a href="https://hikat.xyz" target="_blank" rel="noopener noreferrer" className="text-vermillion underline hover:opacity-80 transition-opacity">
+              hikat
+            </a>
+            , made by{" "}
+            <a href="https://hikity.xyz" target="_blank" rel="noopener noreferrer" className="text-vermillion underline hover:opacity-80 transition-opacity">
+              hikity
+            </a>
           </p>
 
           <div className="w-full max-w-[320px]">
@@ -261,19 +268,34 @@ export default function SexyFooter() {
 
       {/* ── 4. Giant outlined wordmark ── */}
       <div className="w-full overflow-hidden z-0 pointer-events-none -mb-2 sm:-mb-4">
-        <h3
-          className="w-full text-center font-heading font-black uppercase tracking-tighter leading-[0.8] text-transparent whitespace-nowrap text-[11.5vw]"
-          style={{ WebkitTextStroke: "1.5px rgba(15, 23, 42, 0.10)" }}
-        >
-          SPARSH&nbsp;MUKTHI
-        </h3>
+        <img
+          src="/logo.jpg"
+          alt="Sparsh Mukthi"
+          className="w-[min(48vw,440px)] mx-auto opacity-10 grayscale"
+        />
       </div>
 
       {/* ── 5. Bottom metadata bar ── */}
       <div className="w-full max-w-[1240px] mx-auto z-10 relative">
         <div className="w-full flex flex-col sm:flex-row justify-between items-center pt-6 border-t border-black/5 gap-4">
-          <p className="text-[10px] text-charcoalText/40 font-heading font-bold uppercase tracking-wider">
-            © {new Date().getFullYear()} Sparsh Mukthi 3D · Your camera never leaves your computer
+          <p className="text-[10px] text-charcoalText/60 font-heading font-bold uppercase tracking-wider flex flex-wrap items-center gap-1.5">
+            <span>© {new Date().getFullYear()} Sparsh Mukthi 3D</span>
+            <span>·</span>
+            <span>
+              A product of{" "}
+              <a href="https://hikat.xyz" target="_blank" rel="noopener noreferrer" className="text-vermillion underline hover:opacity-80">
+                hikat
+              </a>
+            </span>
+            <span>·</span>
+            <span>
+              Made by{" "}
+              <a href="https://hikity.xyz" target="_blank" rel="noopener noreferrer" className="text-vermillion underline hover:opacity-80">
+                hikity
+              </a>
+            </span>
+            <span>·</span>
+            <span>Your camera never leaves your computer</span>
           </p>
 
           <button

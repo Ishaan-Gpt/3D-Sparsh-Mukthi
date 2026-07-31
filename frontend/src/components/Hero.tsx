@@ -37,10 +37,7 @@ export default function Hero() {
       {/* 2. Fixed Top Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between p-4 sm:p-5 bg-white/20 backdrop-blur-md border-b border-black/5">
         <div className="flex items-center gap-2">
-          <svg className="w-6 h-6 fill-charcoalText" viewBox="0 0 256 256">
-            <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
-          </svg>
-          <span className="text-charcoalText text-xl font-serif-italic font-bold">SM3D</span>
+          <img src="/logo.jpg" alt="Sparsh Mukthi" className="w-28 h-12 object-contain" />
         </div>
 
         {/* Navigation Links */}
