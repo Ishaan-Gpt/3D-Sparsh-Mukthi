@@ -32,7 +32,26 @@ const OPENAI_MODEL = "gpt-4o-mini";
 const GEMINI_MODELS = ["gemini-3-flash-preview", "gemini-3.1-flash-lite"];
 
 const app = express();
-app.use(cors());
+
+// Custom CORS header middleware ensuring all responses (including OPTIONS preflight) carry CORS headers
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
+
+const corsOptions = {
+  origin: "*",
+  methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 // ---------------------------------------------------------------------------
@@ -602,8 +621,16 @@ app.post("/api/webrtc/clear", (req, res) => {
   res.json({ success: true });
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`AI classroom proxy running on port ${PORT}`);
-  console.log(`Providers: claude=${Boolean(anthropic)} openai=${Boolean(openai)}`);
-});
+// Local/Render/Railway: run a real persistent server.
+// Vercel: the platform imports this file as a serverless function instead of
+// executing it directly, so `require.main === module` is false there and no
+// port is bound — module.exports = app below is what Vercel actually calls.
+if (require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`AI classroom proxy running on port ${PORT}`);
+    console.log(`Providers: claude=${Boolean(anthropic)} openai=${Boolean(openai)}`);
+  });
+}
+
+module.exports = app;

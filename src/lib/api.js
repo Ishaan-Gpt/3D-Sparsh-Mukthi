@@ -1,6 +1,8 @@
-// Same-origin: Vite dev server proxies /api → the AI proxy (port 3001).
-const API_BASE = "";
-const CACHE_PREFIX = "sparsh_mukthi_cache_";
+// Dev: Vite dev server proxies /api → the AI proxy (port 3001), same-origin.
+// Prod: the proxy is deployed separately, so VITE_API_BASE points at it
+// (set at build time); CORS on the proxy allows the cross-origin calls.
+export const API_BASE = import.meta.env.VITE_API_BASE || "";
+const CACHE_PREFIX = "oped_cache_";
 
 function getCachedItem(key) {
   try {

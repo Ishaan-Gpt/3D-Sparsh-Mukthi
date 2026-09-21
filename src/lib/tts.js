@@ -3,10 +3,15 @@
 // browser speechSynthesis (en-IN preferred). Callbacks fire on line start /
 // done so captions, animation and phase transitions stay in sync with audio.
 
+import { API_BASE } from "./api";
+
 let currentToken = 0;
 let currentAudio = null;
-let serverTTSBroken = false; // flip to fallback for the session after a failure
+let serverTTSBrokenUntil = 0; // rest the server voice briefly after repeated failures, then retry
+const serverDown = () => Date.now() < serverTTSBrokenUntil;
 const audioCache = new Map(); // key -> object URL of a wav blob
+const inflight = new Map(); // key -> promise (dedupe warm-vs-live double fetches)
+let liveCount = 0; // >0 while a line that must play NOW is generating — warm queue yields
 
 // ---------- browser-voice fallback helpers ----------
 let voicesCache = [];
@@ -56,29 +61,50 @@ function pcmBase64ToWavUrl(b64, rate = 24000) {
   return URL.createObjectURL(new Blob([header, pcm], { type: "audio/wav" }));
 }
 
-async function fetchLineAudio(text, opts, retries = 1) {
+async function fetchLineAudio(text, opts, retries = 1, { live = false } = {}) {
   const voiceName = opts.voiceName ?? (opts.voiceGender === "male" ? "Charon" : "Kore");
   const orpheusVoice = opts.orpheusVoice ?? (opts.voiceGender === "male" ? "leo" : "tara");
   const style = opts.styleNote ?? "a warm Indian primary school teacher";
   const key = `${orpheusVoice}|${voiceName}|${style}|${text}`;
   if (audioCache.has(key)) return audioCache.get(key);
-  for (let attempt = 0; ; attempt++) {
+  if (inflight.has(key)) return inflight.get(key);
+  const job = (async () => {
+    if (live) liveCount++;
     try {
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, voiceName, orpheusVoice, style }),
-      });
-      if (!res.ok) throw new Error(`tts ${res.status}`);
-      const { audio, rate } = await res.json();
-      const url = pcmBase64ToWavUrl(audio, rate);
-      audioCache.set(key, url);
-      return url;
-    } catch (err) {
-      if (attempt >= retries) throw err;
-      await new Promise((r) => setTimeout(r, 700)); // brief backoff (model overload)
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const res = await fetch(`${API_BASE}/api/tts`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voiceName, orpheusVoice, style }),
+          });
+          if (!res.ok) throw new Error(`tts ${res.status}`);
+          const { audio, rate } = await res.json();
+          const url = pcmBase64ToWavUrl(audio, rate);
+          audioCache.set(key, url);
+          return url;
+        } catch (err) {
+          if (attempt >= retries) throw err;
+          await new Promise((r) => setTimeout(r, 700)); // brief backoff (model overload)
+        }
+      }
+    } finally {
+      if (live) liveCount--;
+      inflight.delete(key);
     }
-  }
+  })();
+  inflight.set(key, job);
+  return job;
+}
+
+// Preload specific lines into the cache and WAIT for them (with a safety
+// timeout) — used before the lesson starts so the very first spoken lines
+// play instantly in the Kokoro/Orpheus human voice, never the robot fallback.
+export async function preloadLines(lines, opts = {}, { timeoutMs = 45000 } = {}) {
+  const clean = (lines || []).map((l) => String(l).trim()).filter(Boolean);
+  if (!clean.length) return;
+  const all = Promise.all(clean.map((l) => fetchLineAudio(l, opts, 1, { live: true }).catch(() => null)));
+  await Promise.race([all, new Promise((r) => setTimeout(r, timeoutMs))]);
 }
 
 // ---------- whole-lesson preloader ----------
@@ -86,7 +112,7 @@ async function fetchLineAudio(text, opts, retries = 1) {
 // ~90% of speech starts instantly from cache (Orpheus generates once, up
 // front). Only live doubt answers still generate on the fly. Concurrency is
 // limited so the TTS server stays responsive for the line being spoken NOW.
-export function warmSpeechCache(tasks, { concurrency = 2 } = {}) {
+export function warmSpeechCache(tasks, { concurrency = 1 } = {}) {
   let cancelled = false;
   const queue = [];
   for (const t of tasks) {
@@ -97,7 +123,12 @@ export function warmSpeechCache(tasks, { concurrency = 2 } = {}) {
   }
   let idx = 0;
   const worker = async () => {
-    while (!cancelled && idx < queue.length && !serverTTSBroken) {
+    while (!cancelled && idx < queue.length && !serverDown()) {
+      // the line being spoken NOW always wins the TTS server — warm jobs yield
+      while (!cancelled && liveCount > 0) {
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      if (cancelled) return;
       const job = queue[idx++];
       try {
         await fetchLineAudio(job.text, job.opts, 0);
@@ -121,7 +152,7 @@ export function speakLines(lines, opts = {}) {
     return () => {};
   }
 
-  if (!serverTTSBroken) {
+  if (!serverDown()) {
     speakViaServer(clean, opts, token);
   } else {
     speakViaBrowser(clean, opts, token);
@@ -159,7 +190,7 @@ async function speakViaServer(lines, opts, token) {
   const pending = new Map();
   const ensure = (i) => {
     if (i >= lines.length) return null;
-    if (!pending.has(i)) pending.set(i, fetchLineAudio(lines[i], opts).catch((e) => e));
+    if (!pending.has(i)) pending.set(i, fetchLineAudio(lines[i], opts, 1, { live: true }).catch((e) => e));
     return pending.get(i);
   };
   ensure(0);
@@ -182,9 +213,14 @@ async function speakViaServer(lines, opts, token) {
       });
       consecutiveTTSFailures = 0;
     } catch {
-      // this line falls back to the browser voice; sequence continues
+      // this line falls back to the browser voice; sequence continues.
+      // repeated failures rest the server voice for 75s, then it is retried —
+      // the human voice comes back for the rest of the class, never lost for good.
       consecutiveTTSFailures++;
-      if (consecutiveTTSFailures >= 4) serverTTSBroken = true;
+      if (consecutiveTTSFailures >= 4) {
+        serverTTSBrokenUntil = Date.now() + 75000;
+        consecutiveTTSFailures = 0;
+      }
       if (token !== currentToken) return;
       await speakOneBrowser(lines[i], opts);
     }

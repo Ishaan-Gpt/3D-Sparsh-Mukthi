@@ -28,16 +28,24 @@ export const useLessonStore = create((set, get) => ({
   mcq: null, // live quiz question { question, options, correct, picked, index }
 
   // ---- immersive study (solar system module) ----
-  appMode: "classroom", // classroom | solar
+  appMode: "classroom", // classroom | solar | heart
   solarMode: "choose", // choose | interact | tour
   selectedBody: null, // planet id for the info card
   tour: null, // AI-generated narration {stops:[{id,title,spoken,board}]}
   tourStep: 0,
   solarBoard: { title: "", lines: [] }, // teacher's floating text board in the tour
   solarEye: false, // 👁 AR mode: your webcam replaces space — touch the planets
+  heartMode: "choose",
+  selectedHeartPart: null,
+  heartTourStep: 0,
 
   enterSolar: () => set({ appMode: "solar", solarMode: "choose", selectedBody: null, tourStep: 0 }),
   exitSolar: () => set({ appMode: "classroom", selectedBody: null, solarEye: false }),
+  enterHeart: () => set({ appMode: "heart", heartMode: "choose", selectedHeartPart: null, heartTourStep: 0 }),
+  exitHeart: () => set({ appMode: "classroom", selectedHeartPart: null }),
+  setHeartMode: (heartMode) => set({ heartMode }),
+  setSelectedHeartPart: (selectedHeartPart) => set({ selectedHeartPart }),
+  setHeartTourStep: (heartTourStep) => set({ heartTourStep }),
   toggleSolarEye: () => set((s) => ({ solarEye: !s.solarEye })),
   setSolarMode: (solarMode) => set({ solarMode }),
   setSelectedBody: (selectedBody) => set({ selectedBody }),
@@ -109,6 +117,9 @@ export const useLessonStore = create((set, get) => ({
       tourStep: 0,
       solarBoard: { title: "", lines: [] },
       solarEye: false,
+      heartMode: "choose",
+      selectedHeartPart: null,
+      heartTourStep: 0,
       config: null,
       lesson: null,
       error: null,

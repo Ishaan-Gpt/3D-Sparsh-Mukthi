@@ -9,6 +9,8 @@ import { ExcalidrawBoard } from "./components/whiteboard/ExcalidrawBoard";
 import { SolarSystem } from "./components/solar/SolarSystem";
 import { SolarHUD } from "./components/solar/SolarHUD";
 import { EyeBackground } from "./components/solar/EyeBackground";
+import { HeartSystem } from "./components/heart/HeartSystem";
+import { HeartHUD } from "./components/heart/HeartHUD";
 import { useLessonStore } from "./store/useLessonStore";
 import { useLessonEngine } from "./hooks/useLessonEngine";
 import { WebRTCBridge } from "./webrtcBridge_local"; // We'll save a copy in src/ for easy resolving
@@ -16,17 +18,24 @@ import { WebRTCBridge } from "./webrtcBridge_local"; // We'll save a copy in src
 // Define a global reference for the remote gyro coordinates
 export const remoteGyro = { yaw: 0, pitch: 0 };
 
+import { ChairViewer } from "./components/chair/ChairViewer";
+
 const App = () => {
   const phase = useLessonStore((s) => s.phase);
   const appMode = useLessonStore((s) => s.appMode);
   const engine = useLessonEngine();
 
   const [isClient, setIsClient] = useState(false);
+  const [isChairView, setIsChairView] = useState(false);
   const videoRef = useRef(null);
   const bridgeRef = useRef(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    if (params.get("view") === "chair") {
+      setIsChairView(true);
+      return;
+    }
     const clientMode = params.get("role") === "client";
     setIsClient(clientMode);
 
@@ -100,6 +109,10 @@ const App = () => {
     }
   }, []);
 
+  if (isChairView) {
+    return <ChairViewer />;
+  }
+
   if (isClient) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-[99999]">
@@ -128,6 +141,11 @@ const App = () => {
           <EyeBackground />
           <SolarSystem />
           <SolarHUD />
+        </>
+      ) : appMode === "heart" ? (
+        <>
+          <HeartSystem />
+          <HeartHUD />
         </>
       ) : (
         <>

@@ -1,467 +1,356 @@
 import { useEffect, useRef, useState } from "react";
+import { CLASSROOM_URL } from "../lib/config";
+import { ArrowUpRight } from "lucide-react";
 
-// --- IMAGE URLS (all local, bundled with the site) ---
+// Local bundled background images
 const HERO_IMAGE = "/hero_base.png";
 const SECTION2_IMAGE = "/theme_space.png";
+const SECTION3_BG = "/story_classmates.png";
 const SECTION3_IMG1 = "/theme_ocean.png";
 const SECTION3_IMG2 = "/theme_dinosaur.png";
-const SECTION3_BG = "/story_classmates.png";
 
-// --- DATA CONSTANTS ---
 const featureBars = ["Live AI Teacher", "Gesture Controls", "Guided Study Breaks"];
+
 const lessonFlow = [
   { name: "Warm\nIntro", num: "01", active: true },
   { name: "Teaching\nSegments", num: "02", active: false },
   { name: "Peer\nQuestions", num: "03", active: false },
-  { name: "Whiteboard\nSolving", num: null, active: false },
+  { name: "Whiteboard\nSolving", num: "04", active: false },
 ];
 
-// --- CUSTOM HOOKS ---
-function useMaskPositions(
+/**
+ * Custom hook for 100% seamless background window-masking.
+ * Uses exact CSS 'cover' aspect-ratio math so the background image
+ * covers 100% of the container with ZERO blank white voids on any screen resolution.
+ */
+function useCoverMask(
   containerRef: React.RefObject<HTMLElement | null>,
-  cardRefs: React.RefObject<(HTMLElement | null)[]>
+  cardRefs: React.RefObject<(HTMLElement | null)[]>,
+  bgImageSrc: string
 ) {
-  const [positions, setPositions] = useState<{ x: number; y: number; sw: number; sh: number }[]>([]);
-
-  const calculate = () => {
-    const container = containerRef.current;
-    const cards = cardRefs.current;
-    if (!container || !cards) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const newPos = cards.map((card) => {
-      if (!card) return { x: 0, y: 0, sw: 0, sh: 0 };
-      const cardRect = card.getBoundingClientRect();
-      return {
-        x: cardRect.left - containerRect.left,
-        y: cardRect.top - containerRect.top,
-        sw: containerRect.width,
-        sh: containerRect.height,
-      };
-    });
-    setPositions(newPos);
-  };
+  const [cardStyles, setCardStyles] = useState<React.CSSProperties[]>([]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
+    let imgAR = 16 / 9; // Fallback aspect ratio
+    const img = new Image();
+    img.src = bgImageSrc;
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        imgAR = img.naturalWidth / img.naturalHeight;
+      }
+      calculate();
+    };
+
+    const calculate = () => {
+      const c = containerRef.current;
+      const cards = cardRefs.current;
+      if (!c || !cards) return;
+
+      const cRect = c.getBoundingClientRect();
+      const W = cRect.width;
+      const H = cRect.height;
+      if (W === 0 || H === 0) return;
+
+      // Exact background-size: cover scale math
+      let bgW: number;
+      let bgH: number;
+      let offX = 0;
+      let offY = 0;
+
+      if (W / H > imgAR) {
+        bgW = W;
+        bgH = W / imgAR;
+        offY = (bgH - H) / 2;
+      } else {
+        bgH = H;
+        bgW = H * imgAR;
+        offX = (bgW - W) / 2;
+      }
+
+      const newStyles = cards.map((card) => {
+        if (!card) return {};
+        const kRect = card.getBoundingClientRect();
+        const cardX = kRect.left - cRect.left;
+        const cardY = kRect.top - cRect.top;
+
+        const posX = -(cardX + offX);
+        const posY = -(cardY + offY);
+
+        return {
+          backgroundImage: `url(${bgImageSrc})`,
+          backgroundSize: `${Math.round(bgW)}px ${Math.round(bgH)}px`,
+          backgroundPosition: `${Math.round(posX)}px ${Math.round(posY)}px`,
+          backgroundRepeat: "no-repeat",
+        };
+      });
+
+      setCardStyles(newStyles);
+    };
 
     calculate();
-    const observer = new ResizeObserver(() => {
-      calculate();
-    });
-    observer.observe(container);
+
+    const ro = new ResizeObserver(() => calculate());
+    ro.observe(container);
 
     window.addEventListener("resize", calculate);
-    window.addEventListener("scroll", calculate);
-
     return () => {
-      observer.disconnect();
+      ro.disconnect();
       window.removeEventListener("resize", calculate);
-      window.removeEventListener("scroll", calculate);
     };
-  }, [containerRef, cardRefs]);
+  }, [containerRef, cardRefs, bgImageSrc]);
 
-  return positions;
+  return cardStyles;
 }
 
-function useImageWidth(bgImage: string, sectionHeight: number) {
-  const [renderWidth, setRenderWidth] = useState(0);
-
-  useEffect(() => {
-    if (!bgImage || !sectionHeight) return;
-    const img = new Image();
-    img.src = bgImage;
-    img.onload = () => {
-      const width = img.naturalWidth * (sectionHeight / img.naturalHeight);
-      setRenderWidth(width);
-    };
-  }, [bgImage, sectionHeight]);
-
-  return renderWidth;
-}
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 767px)");
-    setIsMobile(mql.matches);
-    const handler = (e: MediaQueryListEvent) => {
-      setIsMobile(e.matches);
-    };
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, []);
-
-  return isMobile;
-}
-
-function useStaggeredReveal(threshold = 0.15) {
-  const [visible, setVisible] = useState(false);
-  const containerRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.unobserve(container);
-        }
-      },
-      { threshold }
-    );
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, [threshold]);
-
-  const getAnimStyle = (index: number): React.CSSProperties => {
-    return {
-      opacity: visible ? 1 : 0,
-      transform: visible ? "translateY(0)" : "translateY(24px)",
-      transition: `opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${index * 120}ms, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${index * 120}ms`,
-    };
-  };
-
-  return { containerRef, getAnimStyle };
-}
-
-// --- MASKED CARD COMPONENT ---
-interface MaskedCardProps {
-  bgImage: string;
-  position?: { x: number; y: number; sw: number; sh: number };
-  imageWidth: number;
-  focalX: number;
-  className?: string;
-  children?: React.ReactNode;
-  cardRef?: (el: HTMLDivElement | null) => void;
-  style?: React.CSSProperties;
-}
-
-function MaskedCard({
-  bgImage,
-  position,
-  imageWidth,
-  focalX,
-  className = "",
-  children,
-  cardRef,
-  style = {},
-}: MaskedCardProps) {
-  const computedStyle: React.CSSProperties = { ...style };
-
-  if (position && position.sh > 0) {
-    const overflow = imageWidth > position.sw ? imageWidth - position.sw : 0;
-    const focalOffset = overflow * focalX;
-    computedStyle.backgroundImage = `url(${bgImage})`;
-    computedStyle.backgroundSize = `auto ${position.sh}px`;
-    computedStyle.backgroundPosition = `-${position.x + focalOffset}px -${position.y}px`;
-    computedStyle.backgroundRepeat = "no-repeat";
-  }
-
-  return (
-    <div ref={cardRef} className={className} style={computedStyle}>
-      {children}
-    </div>
-  );
-}
-
-// --- MAIN CLASSROOM JOURNEY COMPONENT ---
 export default function ClassroomJourney() {
-  const isMobile = useIsMobile();
-
-  // --- SECTION 1 HOOKS ---
+  // --- SECTION 1 REFS & MASK ---
   const s1ContainerRef = useRef<HTMLElement>(null);
   const s1CardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const s1Positions = useMaskPositions(s1ContainerRef, s1CardRefs);
-  const [s1Height, setS1Height] = useState(0);
-  const s1ImageWidth = useImageWidth(HERO_IMAGE, s1Height);
-  const s1Reveal = useStaggeredReveal();
+  const s1Styles = useCoverMask(s1ContainerRef, s1CardRefs, HERO_IMAGE);
 
-  // --- SECTION 2 HOOKS ---
+  // --- SECTION 2 REFS & MASK ---
   const s2ContainerRef = useRef<HTMLElement>(null);
   const s2CardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const s2Positions = useMaskPositions(s2ContainerRef, s2CardRefs);
-  const [s2Height, setS2Height] = useState(0);
-  const s2ImageWidth = useImageWidth(SECTION2_IMAGE, s2Height);
-  const s2Reveal = useStaggeredReveal();
+  const s2Styles = useCoverMask(s2ContainerRef, s2CardRefs, SECTION2_IMAGE);
 
-  // --- SECTION 3 HOOKS ---
-  const s3Reveal = useStaggeredReveal();
-
-  // Measure heights on layout / resize
-  useEffect(() => {
-    const updateHeights = () => {
-      if (s1ContainerRef.current) {
-        setS1Height(s1ContainerRef.current.clientHeight);
-      }
-      if (s2ContainerRef.current) {
-        setS2Height(s2ContainerRef.current.clientHeight);
-      }
-    };
-    updateHeights();
-    window.addEventListener("resize", updateHeights);
-    return () => window.removeEventListener("resize", updateHeights);
-  }, []);
-
-  const s1FocalX = isMobile ? 0.7 : 0.8;
-  const s2FocalX = isMobile ? 0.65 : 0.8;
+  // --- SECTION 3 REFS & MASK ---
+  const s3ContainerRef = useRef<HTMLElement>(null);
+  const s3CardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const s3Styles = useCoverMask(s3ContainerRef, s3CardRefs, SECTION3_BG);
 
   return (
-    <div className="bg-white text-charcoalText font-heading select-none">
-
-      {/* ================= SECTION 1: CLASSROOM HERO ================= */}
+    <div className="bg-white text-charcoalText font-heading select-none w-full">
+      
+      {/* ================= SECTION 1: VIRTUAL CLASSROOM HERO ================= */}
       <section
-        ref={(el) => {
-          s1ContainerRef.current = el;
-          s1Reveal.containerRef.current = el;
-        }}
-        className="h-screen w-full overflow-hidden flex flex-col pt-24 px-3 md:px-5 pb-1.5 md:pb-2 gap-1.5 md:gap-2 relative bg-white"
-        style={{ height: "100dvh" }}
+        ref={s1ContainerRef}
+        className="min-h-screen w-full flex flex-col pt-20 sm:pt-24 px-3 sm:px-6 pb-4 gap-2 sm:gap-3 relative bg-white overflow-hidden"
+        style={{ minHeight: "100vh" }}
       >
-        {/* Feature Bars */}
+        {/* Top 3 Feature Mask Bars */}
         {featureBars.map((bar, i) => (
-          <MaskedCard
+          <div
             key={i}
-            cardRef={(el) => {
+            ref={(el) => {
               s1CardRefs.current[i] = el;
             }}
-            bgImage={HERO_IMAGE}
-            position={s1Positions[i]}
-            imageWidth={s1ImageWidth}
-            focalX={s1FocalX}
-            className="w-full h-14 md:h-20 shrink-0 rounded-xl md:rounded-2xl overflow-hidden relative group"
-            style={s1Reveal.getAnimStyle(i)}
+            style={s1Styles[i]}
+            className="w-full h-14 sm:h-20 shrink-0 rounded-2xl overflow-hidden relative group border border-black/10 shadow-sm"
           >
-            {/* Frosted strip lifts on hover to reveal the full-colour image */}
-            <div className="absolute inset-0 bg-white/40 backdrop-blur-sm z-0 transition-opacity duration-500 group-hover:opacity-0" />
-            <span className="flex items-center justify-center h-full text-charcoalText text-lg md:text-3xl font-bold text-center relative z-10 tracking-tight [text-shadow:0_1px_12px_rgba(255,255,255,0.85)]">
+            {/* Frosted glass overlay that lifts on hover */}
+            <div className="absolute inset-0 bg-white/45 backdrop-blur-md z-0 transition-opacity duration-500 group-hover:opacity-0" />
+            <span className="flex items-center justify-center h-full text-charcoalText text-base sm:text-2xl font-extrabold text-center relative z-10 tracking-tight drop-shadow-sm">
               {bar}
             </span>
-          </MaskedCard>
+          </div>
         ))}
 
-        {/* Main Hero Card (4th card index 3) */}
-        <MaskedCard
-          cardRef={(el) => {
+        {/* Main Hero Masked Card */}
+        <div
+          ref={(el) => {
             s1CardRefs.current[3] = el;
           }}
-          bgImage={HERO_IMAGE}
-          position={s1Positions[3]}
-          imageWidth={s1ImageWidth}
-          focalX={s1FocalX}
-          className="w-full flex-1 min-h-0 rounded-xl md:rounded-2xl overflow-hidden relative"
-          style={s1Reveal.getAnimStyle(3)}
+          style={s1Styles[3]}
+          className="w-full flex-1 min-h-[420px] sm:min-h-[520px] rounded-3xl overflow-hidden relative border border-black/10 shadow-xl flex flex-col justify-between p-5 sm:p-8 group"
         >
-          {/* Soft bottom scrim for headline legibility only */}
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/45 to-transparent z-0" />
+          {/* Subtle Scrim for Contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/20 z-0 pointer-events-none" />
 
-          {/* Top Left Description */}
-          <p className="absolute top-4 left-4 md:top-7 md:left-7 bg-white/70 backdrop-blur-md rounded-xl px-4 py-3 text-charcoalText text-xs md:text-sm font-semibold leading-4 md:leading-5 max-w-[220px] md:max-w-[320px] z-10 text-left shadow-md">
-            A real 3D classroom rendered in your browser — the AI teacher plans, speaks, and paces every lesson live.
-          </p>
-
-          {/* Bottom Left Branding */}
-          <div className="absolute bottom-5 left-3 md:bottom-8 md:left-4 z-10 text-left">
-            <span className="block text-white text-xs md:text-sm font-semibold mb-1 md:mb-2 tracking-wide">
-              Desktop VR for Classes 1–4
+          {/* Top Left Description Pill */}
+          <div className="relative z-10 flex items-start justify-between">
+            <p className="bg-white/85 backdrop-blur-md rounded-2xl px-4 py-3 text-charcoalText text-xs sm:text-sm font-semibold leading-relaxed max-w-[280px] sm:max-w-[380px] text-left shadow-lg border border-white/50">
+              ✨ A real 3D classroom rendered in your browser — the AI teacher plans, speaks, and paces every lesson live.
+            </p>
+            
+            <span className="bg-black/60 backdrop-blur-md border border-white/20 text-white text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full hidden sm:inline-block">
+              No Headset Needed
             </span>
-            <h1 className="text-white text-[clamp(2.5rem,10vw,10rem)] font-bold leading-[0.79] tracking-tight">
-              Virtual<br />Classroom
-            </h1>
           </div>
 
-          {/* Bottom Right Label */}
-          <span className="absolute bottom-6 right-4 md:bottom-10 md:right-8 text-white text-xs md:text-sm font-semibold z-10 tracking-wide">
-            No Headset Needed
-          </span>
-        </MaskedCard>
+          {/* Bottom Row: Branding & Title */}
+          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 pt-8 text-left">
+            <div>
+              <span className="block text-white text-xs sm:text-sm font-bold tracking-wider uppercase mb-1 drop-shadow-md">
+                Desktop VR for Classes 1–4
+              </span>
+              <h1 className="text-white text-4xl sm:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-tight drop-shadow-lg">
+                Virtual<br />Classroom
+              </h1>
+            </div>
+
+            <a
+              href={CLASSROOM_URL}
+              className="inline-flex items-center gap-2 bg-vermillion text-white hover:bg-white hover:text-charcoalText font-bold text-sm sm:text-base px-7 py-3.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all duration-300"
+            >
+              <span>Enter Classroom</span>
+              <ArrowUpRight size={18} />
+            </a>
+          </div>
+        </div>
       </section>
 
       {/* ================= SECTION 2: LESSON GALLERY ================= */}
       <section
-        ref={(el) => {
-          s2ContainerRef.current = el;
-          s2Reveal.containerRef.current = el;
-        }}
-        className="min-h-screen md:h-screen w-full overflow-hidden flex flex-col pt-1.5 md:pt-2 px-3 md:px-5 pb-1.5 md:pb-2 gap-1.5 md:gap-2 relative bg-white"
-        style={{ minHeight: isMobile ? "auto" : "100dvh" }}
+        ref={s2ContainerRef}
+        className="min-h-screen w-full flex flex-col pt-4 px-3 sm:px-6 pb-4 gap-2 sm:gap-3 relative bg-white overflow-hidden"
+        style={{ minHeight: "100vh" }}
       >
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 grid-rows-[auto_auto_auto_auto] md:grid-rows-[1fr_1fr_0.8fr] gap-1.5 md:gap-2">
-
-          {/* Card 0: Top Left Lesson Gallery */}
-          <MaskedCard
-            cardRef={(el) => {
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 grid-rows-[auto_auto_auto] md:grid-rows-[1fr_1fr_0.8fr] gap-2 sm:gap-3">
+          
+          {/* Card 0: Top Left Gallery */}
+          <div
+            ref={(el) => {
               s2CardRefs.current[0] = el;
             }}
-            bgImage={SECTION2_IMAGE}
-            position={s2Positions[0]}
-            imageWidth={s2ImageWidth}
-            focalX={s2FocalX}
-            className="rounded-xl md:rounded-2xl overflow-hidden relative min-h-[160px] md:min-h-0"
-            style={s2Reveal.getAnimStyle(0)}
+            style={s2Styles[0]}
+            className="rounded-2xl overflow-hidden relative min-h-[160px] border border-black/10 shadow-md p-6 flex flex-col justify-between"
           >
-            <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/35 z-0" />
-            <h3 className="absolute top-4 left-5 md:top-6 md:left-7 text-white text-2xl md:text-3xl font-bold z-10 text-left tracking-tight">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-xs z-0" />
+            <h3 className="relative z-10 text-white text-2xl sm:text-4xl font-extrabold text-left tracking-tight">
               Lesson Gallery
             </h3>
-            <span className="absolute bottom-4 left-5 md:bottom-6 md:left-7 text-white text-xs md:text-sm font-semibold z-10 text-left">
-              Every topic becomes a world
+            <span className="relative z-10 text-white/90 text-xs sm:text-sm font-semibold text-left">
+              Every topic becomes a living world
             </span>
-          </MaskedCard>
+          </div>
 
-          {/* Card 1: Top Right Card (spans 2 rows on desktop) */}
-          <MaskedCard
-            cardRef={(el) => {
+          {/* Card 1: Top Right Doubts Detail */}
+          <div
+            ref={(el) => {
               s2CardRefs.current[1] = el;
             }}
-            bgImage={SECTION2_IMAGE}
-            position={s2Positions[1]}
-            imageWidth={s2ImageWidth}
-            focalX={s2FocalX}
-            className="md:row-span-2 rounded-xl md:rounded-2xl overflow-hidden relative min-h-[220px] md:min-h-0"
-            style={s2Reveal.getAnimStyle(1)}
+            style={s2Styles[1]}
+            className="md:row-span-2 rounded-2xl overflow-hidden relative min-h-[220px] border border-black/10 shadow-md p-6 sm:p-8 flex flex-col justify-between"
           >
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent z-0" />
-            <p className="absolute bottom-16 left-5 md:bottom-20 md:left-7 text-white text-xs md:text-sm font-semibold leading-4 md:leading-5 z-10 text-left">
-              Raise your hand and the whole class waits —<br />your doubt is answered on the whiteboard.
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-0" />
+            <p className="relative z-10 text-white text-base sm:text-lg font-semibold leading-relaxed text-left max-w-md">
+              Raise your hand and the whole class waits — your doubt is answered live on the whiteboard.
             </p>
-            <a
-              href="http://localhost:5174/"
-              className="absolute bottom-4 right-4 md:bottom-6 md:right-6 px-6 py-2.5 md:px-8 md:py-4 bg-white rounded-full text-charcoalText text-sm md:text-base font-bold z-10 hover:bg-vermillion hover:text-white hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
-            >
-              Enter Class
-            </a>
-          </MaskedCard>
+            <div className="relative z-10 flex justify-end">
+              <a
+                href={CLASSROOM_URL}
+                className="inline-flex items-center gap-2 bg-white text-charcoalText hover:bg-vermillion hover:text-white font-bold text-sm px-6 py-3 rounded-full shadow-md transition-all duration-300"
+              >
+                <span>Enter Class</span>
+                <ArrowUpRight size={16} />
+              </a>
+            </div>
+          </div>
 
-          {/* Card 2: Bottom Left Doubt Solving */}
-          <MaskedCard
-            cardRef={(el) => {
+          {/* Card 2: Bottom Left Title */}
+          <div
+            ref={(el) => {
               s2CardRefs.current[2] = el;
             }}
-            bgImage={SECTION2_IMAGE}
-            position={s2Positions[2]}
-            imageWidth={s2ImageWidth}
-            focalX={s2FocalX}
-            className="rounded-xl md:rounded-2xl overflow-hidden relative min-h-[160px] md:min-h-0"
-            style={s2Reveal.getAnimStyle(2)}
+            style={s2Styles[2]}
+            className="rounded-2xl overflow-hidden relative min-h-[160px] border border-black/10 shadow-md p-6 flex items-center"
           >
-            <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent z-0" />
-            <h2 className="absolute top-4 left-5 md:top-6 md:left-7 text-white text-[clamp(2.5rem,6vw,5.5rem)] font-bold leading-[0.9] z-10 text-left tracking-tight">
+            <div className="absolute inset-0 bg-black/35 z-0" />
+            <h2 className="relative z-10 text-white text-3xl sm:text-5xl font-black leading-none text-left tracking-tight">
               Doubts<br />solved live
             </h2>
-          </MaskedCard>
+          </div>
 
-          {/* Card 3: Bottom Full Width Lesson Flow Row */}
-          <MaskedCard
-            cardRef={(el) => {
+          {/* Card 3: Bottom Full Width Lesson Flow */}
+          <div
+            ref={(el) => {
               s2CardRefs.current[3] = el;
             }}
-            bgImage={SECTION2_IMAGE}
-            position={s2Positions[3]}
-            imageWidth={s2ImageWidth}
-            focalX={s2FocalX}
-            className="col-span-1 md:col-span-2 rounded-xl md:rounded-2xl overflow-hidden relative min-h-[200px] md:min-h-0 p-3"
-            style={s2Reveal.getAnimStyle(3)}
+            style={s2Styles[3]}
+            className="col-span-1 md:col-span-2 rounded-2xl overflow-hidden relative min-h-[180px] border border-black/10 shadow-md p-3 sm:p-4"
           >
-            <div className="absolute inset-0 z-10 flex flex-col md:flex-row gap-1.5 md:gap-2 p-2 md:p-3">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-0" />
+            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-2 h-full">
               {lessonFlow.map((step, idx) => (
                 <div
                   key={idx}
-                  className={`flex-1 rounded-xl md:rounded-2xl p-4 md:p-5 flex flex-col justify-between text-left transition-all duration-300 hover:-translate-y-0.5 ${
+                  className={`rounded-xl p-4 flex flex-col justify-between text-left transition-all duration-300 ${
                     step.active
-                      ? "bg-white/90 backdrop-blur-md shadow-lg"
-                      : "bg-black/25 backdrop-blur-xl border border-white/15 hover:bg-black/35"
+                      ? "bg-white text-charcoalText shadow-lg"
+                      : "bg-black/30 border border-white/20 text-white hover:bg-black/50"
                   }`}
                 >
-                  <h4
-                    className={`text-lg md:text-2xl font-bold leading-[1.05] whitespace-pre-line tracking-tight ${
-                      step.active ? "text-charcoalText" : "text-white"
-                    }`}
-                  >
+                  <h4 className="text-sm sm:text-lg font-bold leading-tight whitespace-pre-line">
                     {step.name}
                   </h4>
-                  {step.num && (
-                    <span
-                      className={`self-end w-8 h-8 md:w-10 md:h-10 rounded-full border flex items-center justify-center text-xs font-semibold ${
-                        step.active ? "border-charcoalText text-charcoalText" : "border-white text-white"
-                      }`}
-                    >
-                      {step.num}
-                    </span>
-                  )}
+                  <span
+                    className={`self-end text-xs font-extrabold px-2.5 py-1 rounded-full border ${
+                      step.active
+                        ? "border-charcoalText text-charcoalText"
+                        : "border-white text-white"
+                    }`}
+                  >
+                    {step.num}
+                  </span>
                 </div>
               ))}
             </div>
-          </MaskedCard>
+          </div>
 
         </div>
       </section>
 
       {/* ================= SECTION 3: IMMERSIVE STUDY ================= */}
       <section
-        ref={s3Reveal.containerRef}
-        className="min-h-screen md:h-screen w-full overflow-hidden flex flex-col pt-1.5 md:pt-2 px-3 md:px-5 pb-1.5 md:pb-2 gap-1.5 md:gap-2 bg-white"
-        style={{ minHeight: isMobile ? "auto" : "100dvh" }}
+        ref={s3ContainerRef}
+        className="min-h-screen w-full flex flex-col pt-4 px-3 sm:px-6 pb-6 gap-2 sm:gap-3 relative bg-white overflow-hidden"
+        style={{ minHeight: "100vh" }}
       >
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-1.5 md:gap-2">
-
-          {/* Left Column blocks */}
-          <div className="flex flex-col gap-1.5 md:gap-2">
-
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
+          
+          {/* Left Column Blocks */}
+          <div className="flex flex-col gap-2 sm:gap-3">
+            
             {/* Heading Card */}
-            <div
-              style={s3Reveal.getAnimStyle(0)}
-              className="rounded-xl md:rounded-2xl bg-white p-5 md:p-7 flex flex-col justify-between flex-[1.2] min-h-[180px] md:min-h-0 text-left border border-black/10"
-            >
-              <h2 className="text-[clamp(2.5rem,6.5vw,6rem)] font-bold leading-[0.95] text-charcoalText tracking-tight">
+            <div className="rounded-2xl bg-slate-900 text-white p-6 sm:p-8 flex flex-col justify-between min-h-[160px] text-left border border-black/10 shadow-md">
+              <span className="text-xs font-bold text-vermillion uppercase tracking-widest block">
+                Step Inside Your Lesson
+              </span>
+              <h2 className="text-3xl sm:text-6xl font-black tracking-tight leading-none">
                 Immersive<br />Study
               </h2>
-              <p className="text-xs md:text-sm font-semibold text-vermillion uppercase tracking-wider">
-                Step Inside Your Lesson
-              </p>
             </div>
 
-            {/* Side-by-Side Images Card */}
-            <div
-              style={s3Reveal.getAnimStyle(1)}
-              className="flex gap-1.5 md:gap-2 flex-1 min-h-[140px] md:min-h-0"
-            >
-              <div className="flex-1 rounded-xl md:rounded-2xl overflow-hidden border border-black/5 group">
+            {/* Twin Images Card */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 h-40 sm:h-48">
+              <div className="rounded-2xl overflow-hidden relative border border-black/10 shadow-sm group">
                 <img
                   src={SECTION3_IMG1}
-                  alt="Ocean world lesson environment"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  alt="Ocean World"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
+                <span className="absolute bottom-2 left-2 text-white text-xs font-bold bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md">
+                  🌊 Ocean World
+                </span>
               </div>
-              <div className="flex-1 rounded-xl md:rounded-2xl overflow-hidden border border-black/5 group">
+              <div className="rounded-2xl overflow-hidden relative border border-black/10 shadow-sm group">
                 <img
                   src={SECTION3_IMG2}
-                  alt="Prehistoric earth lesson environment"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  alt="Prehistoric World"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
+                <span className="absolute bottom-2 left-2 text-white text-xs font-bold bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md">
+                  🦖 Prehistoric Earth
+                </span>
               </div>
             </div>
 
-            {/* Solar System Module Card */}
-            <div
-              style={s3Reveal.getAnimStyle(2)}
-              className="rounded-xl md:rounded-2xl bg-vermillion/10 border border-vermillion/20 p-5 md:p-7 flex items-end justify-between flex-[0.8] min-h-[160px] md:min-h-0 text-left"
-            >
+            {/* Solar System Tour Card */}
+            <div className="rounded-2xl bg-vermillion/10 border border-vermillion/20 p-6 flex items-center justify-between text-left">
               <div>
-                <p className="text-xs md:text-sm font-semibold text-vermillion uppercase tracking-wider mb-2">
+                <span className="text-xs font-bold text-vermillion uppercase tracking-widest block mb-1">
                   Guided Tour
-                </p>
-                <h3 className="text-xl md:text-3xl font-bold text-charcoalText leading-6 md:leading-8 tracking-tight">
-                  Fly Through<br />the Solar<br />System
+                </span>
+                <h3 className="text-xl sm:text-2xl font-extrabold text-charcoalText">
+                  Fly Through the Solar System
                 </h3>
               </div>
               <a
-                href="http://localhost:5174/"
-                className="px-6 py-2.5 md:px-8 md:py-4 bg-charcoalText rounded-full text-white text-sm md:text-base font-bold hover:bg-vermillion hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
+                href={CLASSROOM_URL}
+                className="px-5 py-2.5 bg-charcoalText text-white hover:bg-vermillion font-bold text-xs sm:text-sm rounded-full shadow-md transition-all duration-300"
               >
                 Try Demo
               </a>
@@ -469,67 +358,31 @@ export default function ClassroomJourney() {
 
           </div>
 
-          {/* Right Column (Single Tall Classmates Card) */}
+          {/* Right Column: Tall Masked Classmates Card */}
           <div
-            style={s3Reveal.getAnimStyle(3)}
-            className="rounded-xl md:rounded-2xl overflow-hidden relative min-h-[350px] md:min-h-0 border border-black/5 group"
+            ref={(el) => {
+              s3CardRefs.current[0] = el;
+            }}
+            style={s3Styles[0]}
+            className="rounded-2xl overflow-hidden relative min-h-[380px] border border-black/10 shadow-lg p-6 flex flex-col justify-between group"
           >
-            <img
-              src={SECTION3_BG}
-              alt="Virtual classmates in the 3D classroom"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-            />
-            {/* Overlay Grid bottom cards */}
-            <div className="absolute bottom-3 left-3 right-3 md:bottom-5 md:left-5 md:right-5 flex gap-1.5 md:gap-2 z-10">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-0" />
 
-              {/* White Overlay card */}
-              <div className="flex-1 bg-white rounded-xl md:rounded-2xl p-4 md:p-5 flex flex-col justify-between h-36 md:h-52 text-left shadow-lg">
-                <h4 className="text-sm md:text-lg font-bold text-charcoalText leading-tight tracking-tight">
-                  How the AI<br />Plans Your<br />Lesson
-                </h4>
-                <div className="self-end w-8 h-8 md:w-10 md:h-10 rounded-full border border-charcoalText flex items-center justify-center hover:bg-charcoalText hover:text-white transition-colors duration-300 cursor-pointer">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 14 14"
-                    fill="none"
-                    className="rotate-[-45deg]"
-                  >
-                    <path
-                      d="M1 7h12m0 0L8 2m5 5L8 12"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
+            <div className="relative z-10 text-left">
+              <span className="bg-white/90 backdrop-blur-md text-charcoalText text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm">
+                Social Learning Engine
+              </span>
+            </div>
+
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
+              <div className="bg-white/90 backdrop-blur-md rounded-xl p-4 text-charcoalText shadow-md border border-white/40">
+                <h4 className="text-xs font-extrabold mb-1">How AI Plans Lessons</h4>
+                <p className="text-[11px] text-charcoalText/70">Pacing adapts live to student responses.</p>
               </div>
-
-              {/* Glass Overlay card */}
-              <div className="flex-1 bg-black/30 backdrop-blur-xl rounded-xl md:rounded-2xl p-4 md:p-5 flex flex-col justify-between h-36 md:h-52 text-left border border-white/15 shadow-lg">
-                <h4 className="text-sm md:text-lg font-bold text-white leading-tight tracking-tight">
-                  Breaks that<br />Protect<br />Young Eyes
-                </h4>
-                <div className="self-end w-8 h-8 md:w-10 md:h-10 rounded-full border border-white flex items-center justify-center text-white hover:bg-white hover:text-charcoalText transition-colors duration-300 cursor-pointer">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 14 14"
-                    fill="none"
-                    className="rotate-[-45deg]"
-                  >
-                    <path
-                      d="M1 7h12m0 0L8 2m5 5L8 12"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
+              <div className="bg-black/60 backdrop-blur-md rounded-xl p-4 text-white shadow-md border border-white/20">
+                <h4 className="text-xs font-extrabold mb-1">Eye Rest Breaks</h4>
+                <p className="text-[11px] text-slate-300">Enforces pauses during long study sessions.</p>
               </div>
-
             </div>
           </div>
 

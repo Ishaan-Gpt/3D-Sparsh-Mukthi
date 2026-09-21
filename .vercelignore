@@ -1,0 +1,13 @@
+# Local-only tooling, never needed by the deployed frontend build.
+tools/gen3d/venv/
+tools/gen3d/shap_e_model_cache/
+tools/gen3d/*.obj
+tools/gen3d/*.glb
+tools/gen3d/*.ply
+
+orpheus-server/.venv/
+orpheus-server/*.onnx
+orpheus-server/*.bin
+
+node_modules
+.git

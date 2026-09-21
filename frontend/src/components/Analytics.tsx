@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { CLASSROOM_URL } from "../lib/config";
 import { Info, ArrowUpRight } from "lucide-react";
 
 export default function Analytics() {
@@ -201,7 +202,7 @@ export default function Analytics() {
               Gestures Tracked Today
             </div>
             <a
-              href="http://localhost:5174/"
+              href={CLASSROOM_URL}
               className="w-full flex items-center justify-between bg-charcoalText hover:bg-black text-white font-heading text-xs font-semibold px-3 py-2 rounded-full transition-all"
             >
               Enter Class
@@ -224,10 +225,10 @@ export default function Analytics() {
               <svg className="w-4 h-4 fill-charcoalText" viewBox="0 0 256 256">
                 <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
               </svg>
-              <span className="text-charcoalText text-xs font-serif-italic font-bold">SM3D</span>
+              <span className="text-charcoalText text-xs font-serif-italic font-bold">OPED</span>
             </div>
             <a
-              href="http://localhost:5174/"
+              href={CLASSROOM_URL}
               className="w-8 h-8 rounded-full bg-charcoalText flex items-center justify-center hover:bg-black transition-all"
             >
               <ArrowUpRight size={14} className="text-white" />

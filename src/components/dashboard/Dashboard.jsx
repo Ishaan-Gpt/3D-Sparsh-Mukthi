@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CURRICULUM, TEACHER_PRESETS, STUDENT_NAMES } from "../../data/curriculum";
 import { useLessonStore } from "../../store/useLessonStore";
 import { fetchLesson } from "../../lib/api";
+import { preloadLines } from "../../lib/tts";
 import "./Dashboard.css";
 
 export function Dashboard() {
@@ -47,6 +48,20 @@ export function Dashboard() {
     setPhase("loading");
     try {
       const { data } = await fetchLesson(config);
+      // Warm the teacher's REAL (Kokoro) voice for the opening lines before the
+      // class begins — the first words heard are human, never the robot fallback.
+      // The rest of the lesson keeps warming in the background (useLessonEngine).
+      const t = config.teacher ?? {};
+      await preloadLines(
+        (data.intro ?? []).slice(0, 3),
+        {
+          voiceGender: t.voiceGender,
+          voiceName: t.voiceName ?? (t.voiceGender === "male" ? "Charon" : "Kore"),
+          orpheusVoice: t.orpheusVoice ?? (t.voiceGender === "male" ? "leo" : "tara"),
+          styleNote: `${t.name ?? "a teacher"}, a ${t.style ?? "warm"} Indian primary school teacher`,
+        },
+        { timeoutMs: 40000 }
+      );
       setLesson(data);
       setPhase("intro");
     } catch (err) {
@@ -78,7 +93,7 @@ export function Dashboard() {
           </div>
           <span className="dash-eyebrow">AI Virtual Classroom · Classes 1–4</span>
           <h1>
-            Sparsh <em>Mukthi</em>
+            OPED
           </h1>
           <p className="dash-sub">
             A living 3D classroom with a real AI teacher — she knows your name, answers your
@@ -223,7 +238,7 @@ export function Dashboard() {
                 </svg>
               </span>
               <h4>
-                Sparsh <em>Mukthi</em>
+                OPED
               </h4>
               <p>
                 Desktop-VR education for Classes 1–4. Real AI, real voice, real attention — no
@@ -265,7 +280,7 @@ export function Dashboard() {
             <span className="foot-dot">•</span>
             <span>Your camera never leaves your computer</span>
             <span className="foot-dot">•</span>
-            <span>© {new Date().getFullYear()} Sparsh Mukthi</span>
+            <span>© {new Date().getFullYear()} OPED</span>
           </div>
         </footer>
       </main>

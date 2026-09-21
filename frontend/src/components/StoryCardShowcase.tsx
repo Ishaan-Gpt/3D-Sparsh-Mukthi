@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { CLASSROOM_URL } from "../lib/config";
 import { motion, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { Heart, MessageCircle, ArrowUpRight } from "lucide-react";
 
@@ -163,7 +164,7 @@ export default function StoryCardShowcase() {
           {/* Bottom Interactive Options */}
           <div className="absolute left-6 right-6 bottom-6 flex items-center justify-between z-20">
             <a
-              href="http://localhost:5174/"
+              href={CLASSROOM_URL}
               className="bg-charcoalText text-white hover:bg-black font-heading text-xs font-semibold px-4 py-2.5 rounded-full shadow-md flex items-center gap-1.5 transition-all"
             >
               Demo Class <ArrowUpRight size={12} />

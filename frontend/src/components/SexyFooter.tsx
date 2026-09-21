@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { CLASSROOM_URL } from "../lib/config";
 import { ArrowUp, ArrowUpRight, Check } from "lucide-react";
 
 export default function SexyFooter() {
@@ -131,7 +132,7 @@ export default function SexyFooter() {
           <div className="absolute inset-0 rounded-full border border-dashed border-charcoalText/10 scale-[1.22] pointer-events-none group-hover:rotate-45 transition-transform duration-700" />
 
           <a
-            href="http://localhost:5174/"
+            href={CLASSROOM_URL}
             className="w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-charcoalText text-white flex flex-col items-center justify-center p-8 text-center transition-all duration-300 shadow-2xl hover:scale-[1.04] hover:bg-black border border-white/10"
           >
             <span className="text-[10px] font-bold uppercase tracking-widest text-vermillion mb-2">
@@ -189,7 +190,7 @@ export default function SexyFooter() {
             <svg className="w-6 h-6 fill-charcoalText" viewBox="0 0 256 256">
               <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
             </svg>
-            <span className="text-charcoalText text-lg font-serif-italic font-bold">SM3D</span>
+            <span className="text-charcoalText text-lg font-serif-italic font-bold">OPED</span>
           </div>
           <p className="text-charcoalText/60 text-xs font-heading font-medium leading-relaxed max-w-[300px] mb-8">
             Bringing the physical school environment and high-quality private tuition
@@ -265,7 +266,7 @@ export default function SexyFooter() {
           className="w-full text-center font-heading font-black uppercase tracking-tighter leading-[0.8] text-transparent whitespace-nowrap text-[11.5vw]"
           style={{ WebkitTextStroke: "1.5px rgba(15, 23, 42, 0.10)" }}
         >
-          SPARSH&nbsp;MUKTHI
+          OPED
         </h3>
       </div>
 
@@ -273,7 +274,7 @@ export default function SexyFooter() {
       <div className="w-full max-w-[1240px] mx-auto z-10 relative">
         <div className="w-full flex flex-col sm:flex-row justify-between items-center pt-6 border-t border-black/5 gap-4">
           <p className="text-[10px] text-charcoalText/40 font-heading font-bold uppercase tracking-wider">
-            © {new Date().getFullYear()} Sparsh Mukthi 3D · Your camera never leaves your computer
+            © {new Date().getFullYear()} OPED · Your camera never leaves your computer
           </p>
 
           <button

@@ -33,3 +33,11 @@ proxy-server/.env
 orpheus-server/.venv/
 orpheus-server/*.onnx
 orpheus-server/*.bin
+.vercel
+
+# local text-to-3D tool (large venv + model weights + generated test output)
+tools/gen3d/venv/
+tools/gen3d/shap_e_model_cache/
+tools/gen3d/*.obj
+tools/gen3d/*.glb
+tools/gen3d/*.ply

@@ -20,6 +20,7 @@ Then in proxy-server/.env:  ORPHEUS_TTS_URL=http://localhost:5005
 """
 import io
 import os
+import threading
 
 import soundfile as sf
 from fastapi import FastAPI
@@ -41,8 +42,19 @@ VOICE_MAP = {
     "zoe": "af_bella",
 }
 
-app = FastAPI(title="Kokoro CPU TTS (Orpheus-compatible) for Sparsh Mukthi 3D")
+app = FastAPI(title="Kokoro CPU TTS (Orpheus-compatible) for OPED")
 kokoro = Kokoro(os.path.join(HERE, "kokoro-v1.0.onnx"), os.path.join(HERE, "voices-v1.0.bin"))
+
+# One generation at a time: concurrent ONNX runs on CPU slow EVERY request down
+# (and trip the proxy's timeout); a queue keeps each one fast and predictable.
+_gen_lock = threading.Lock()
+
+
+@app.on_event("startup")
+def warmup():
+    with _gen_lock:
+        kokoro.create("Hello class!", voice="af_heart", speed=1.0, lang="en-us")
+    print("[kokoro] warmed up — first real line will be fast")
 
 
 class SpeechRequest(BaseModel):
@@ -61,7 +73,8 @@ def health():
 @app.post("/v1/audio/speech")
 def speech(req: SpeechRequest):
     voice = VOICE_MAP.get(req.voice, req.voice if req.voice in VOICE_MAP.values() else "af_heart")
-    samples, sample_rate = kokoro.create(req.input, voice=voice, speed=req.speed, lang="en-us")
+    with _gen_lock:
+        samples, sample_rate = kokoro.create(req.input, voice=voice, speed=req.speed, lang="en-us")
     buf = io.BytesIO()
     sf.write(buf, samples, sample_rate, format="WAV", subtype="PCM_16")
     return Response(content=buf.getvalue(), media_type="audio/wav")

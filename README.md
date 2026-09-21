@@ -1,4 +1,4 @@
-# 🏫 Sparsh Mukthi 3D — AI Virtual Classroom (Classes 1–4)
+# 🏫 OPED — AI Virtual Classroom (Classes 1–4)
 
 A browser-based "Desktop VR" school for children aged 6–10. Pick a class, subject, topic and
 teacher on a kid-friendly dashboard — then step into a real 3D classroom where an AI teacher

@@ -1,7 +1,8 @@
 import axios from "axios";
 
-// Proxy endpoint base (assumed to be running on port 3001)
-const SIGNAL_URL = `http://${window.location.hostname}:3001/api/webrtc`;
+// Proxy endpoint base
+const API_BASE = import.meta.env.VITE_API_BASE || "";
+const SIGNAL_URL = `${API_BASE}/api/webrtc`;
 
 export class WebRTCBridge {
   constructor(role = "host", onStream = null, onMessage = null) {

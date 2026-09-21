@@ -43,6 +43,7 @@ export function LessonHUD({ resumeFromBreak, pauseClass, resumeClass, answerDoub
   const progress = useLessonStore((s) => s.progress);
   const breakEndsAt = useLessonStore((s) => s.breakEndsAt);
   const enterSolar = useLessonStore((s) => s.enterSolar);
+  const enterHeart = useLessonStore((s) => s.enterHeart);
   const reset = useLessonStore((s) => s.reset);
   const boardOpen = useLessonStore((s) => s.boardOpen);
   const setBoardOpen = useLessonStore((s) => s.setBoardOpen);
@@ -51,6 +52,7 @@ export function LessonHUD({ resumeFromBreak, pauseClass, resumeClass, answerDoub
   const pct = Math.round(progress * 100);
 
   const immersiveAvailable = /solar|planet|space/i.test(config?.topic ?? "");
+  const heartAvailable = config?.subject === "Science";
   const quit = () => {
     stopSpeech();
     reset();
@@ -120,6 +122,11 @@ export function LessonHUD({ resumeFromBreak, pauseClass, resumeClass, answerDoub
             title="Turn the classroom into a 3D solar system!"
           >
             🪐 Immersive Study
+          </button>
+        )}
+        {heartAvailable && (
+          <button className="hud-btn immersive" onClick={enterHeart} disabled={["break", "end", "paused"].includes(phase)} title="Explore the human heart in 3D">
+            ❤️ Heart Journey
           </button>
         )}
         <button

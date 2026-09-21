@@ -16,8 +16,8 @@ export const CURRICULUM = {
     topics: {
       1: ["The Solar System 🪐", "My Body", "Animals Around Us", "Plants Around Us", "Day and Night"],
       2: ["The Solar System 🪐", "Food and Nutrition", "Water and Its Uses", "Weather and Seasons", "Living and Non-Living Things"],
-      3: ["The Solar System 🪐", "States of Matter", "Parts of a Plant", "Our Environment"],
-      4: ["The Solar System 🪐", "Light and Shadows", "Force and Motion", "The Human Digestive System", "Air and Water Cycle"],
+      3: ["The Solar System 🪐", "The Human Heart and Blood Flow ❤️", "States of Matter", "Parts of a Plant", "Our Environment"],
+      4: ["The Solar System 🪐", "The Human Heart and Blood Flow ❤️", "Light and Shadows", "Force and Motion", "The Human Digestive System", "Air and Water Cycle"],
     },
   },
   English: {
@@ -44,10 +44,15 @@ export const CURRICULUM = {
 
 // Each teacher has ONE fixed neural voice: an Orpheus voice (most human,
 // used when the Orpheus TTS server is up) + a Gemini prebuilt voice fallback.
+// Anaya/Aswath model swap is on hold pending a real distinct asset (recolor-only
+// reskin of Emilian was rejected as "the same guy in different clothes"); they
+// point at the neutral unmodified rig until that's resolved.
 export const TEACHER_PRESETS = [
-  { name: "Miss Anaya", style: "warm and playful", voiceGender: "female", voiceName: "Kore", orpheusVoice: "tara", rate: 0.95, pitch: 1.15 },
-  { name: "Mr. Vikram", style: "calm and encouraging", voiceGender: "male", voiceName: "Charon", orpheusVoice: "leo", rate: 0.92, pitch: 0.95 },
-  { name: "Miss Sarah", style: "energetic and fun", voiceGender: "female", voiceName: "Aoede", orpheusVoice: "jess", rate: 1.0, pitch: 1.2 },
+  { name: "Miss Anaya", style: "warm and playful", voiceGender: "female", voiceName: "Kore", orpheusVoice: "tara", rate: 0.95, pitch: 1.15, modelUrl: "/models/emilian-avatar.glb" },
+  { name: "Mr. Vikram", style: "calm and encouraging", voiceGender: "male", voiceName: "Charon", orpheusVoice: "leo", rate: 0.92, pitch: 0.95, modelUrl: "/models/cop/scene.gltf" },
+  { name: "Miss Sarah", style: "energetic and fun", voiceGender: "female", voiceName: "Aoede", orpheusVoice: "jess", rate: 1.0, pitch: 1.2, modelUrl: "/models/emilian-avatar.glb" },
+  { name: "Aswath Mu", style: "formal and warm", voiceGender: "male", voiceName: "Fenrir", orpheusVoice: "dan", rate: 0.94, pitch: 0.9, modelUrl: "/models/emilian-avatar.glb" },
+  { name: "Ishaan", style: "mysterious and wise", voiceGender: "male", voiceName: "Puck", orpheusVoice: "zac", rate: 0.9, pitch: 0.85, modelUrl: "/models/ishaan.glb" },
 ];
 
 export const STUDENT_NAMES = ["Aarav", "Meera", "Kabir", "Zoya", "Ishaan", "Diya"];

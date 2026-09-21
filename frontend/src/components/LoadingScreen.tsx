@@ -45,7 +45,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
       >
         <img
           src="/sp_vr_headset.png"
-          alt="Sparsh Mukthi VR Headset"
+          alt="OPED VR Headset"
           className="w-full h-full object-contain filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.06)]"
         />
       </motion.div>
@@ -53,7 +53,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
       {/* Brand Title */}
       <div className="z-10 text-center mb-6">
         <h2 className="text-xl sm:text-2xl font-heading font-black tracking-[0.15em] uppercase text-charcoalText">
-          SPARSH MUKTHI
+          OPED
         </h2>
         <span className="text-[10px] font-serif-italic text-vermillion tracking-wider uppercase">
           3D virtual classroom
